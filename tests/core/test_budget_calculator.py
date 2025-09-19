@@ -1,11 +1,13 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pandas as pd
-import numpy as np
+
+from snt_malaria_budgeting.core.budget_calculator import generate_budget
 
 
-# Assuming the CostSettingItems class can be mocked with a simple object
 class MockCostSettings:
+    """Mock settings class for testing budget calculations."""
+
     def __init__(self):
         # ITN Campaign
         self.itn_campaign_net_needed_radio = 1.8
@@ -32,6 +34,7 @@ class MockCostSettings:
         self.smc_buffer = 1.1
         self.smc_coverage = 1
         self.smc_include_5_10 = False
+
         # PMC
         self.pmc_coverage = 0.85
         self.pmc_rounds_per_child = 4
@@ -40,17 +43,16 @@ class MockCostSettings:
         self.pmc_larger_dose_factor = 2
         self.pmc_touchpoints = 4
         self.pmc_tablet_factor = 0.75
+
         # Vaccine
         self.vacc_coverage = 0.84
         self.vacc_wastage_offset = 1.1
         self.vacc_doses_per_child = 4
 
 
-# Import the function to be tested
-from budgetController import generate_budget
+class TestBudgetCalculator(unittest.TestCase):
+    """Test suite for budget calculation functionality."""
 
-
-class TestGenerateBudget(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock dataframes and settings once for all tests."""
@@ -197,10 +199,8 @@ class TestGenerateBudget(unittest.TestCase):
         )
 
     @patch("pandas.read_csv")
-    @patch("pandas.read_excel")
-    def run_generate_budget(self, mock_read_excel, mock_read_csv):
+    def run_generate_budget(self, mock_read_csv):
         """Helper method to run generate_budget with mocked file reads."""
-        mock_read_excel.return_value = self.mock_population_data
         mock_read_csv.return_value = self.mock_cm_data
         return generate_budget(
             self.scen_data, self.cost_data, self.settings, self.mock_population_data
@@ -272,14 +272,14 @@ class TestGenerateBudget(unittest.TestCase):
         self.assertAlmostEqual(df[df["unit"] == "per AL"]["quantity"].iloc[0], 400.0)
 
     def test_final_cost_calculation(self):
-        """Verify a final cost_element calculation."""
+        """Verify final cost_element calculation."""
         result = self.run_generate_budget()
         # IPTp: 528 doses * $0.5/dose = $264
         iptp_cost = result[
             (result["code_intervention"] == "iptp") & (result["currency"] == "USD")
         ]["cost_element"].iloc[0]
         self.assertAlmostEqual(iptp_cost, 264.0)
-        # ITN Routine: 360 nets * 1890 NGN/net *1.1 buffer = 748,440 NGN
+        # ITN Routine: 396 nets * 1890 NGN/net = 748,440 NGN
         itn_routine_cost_ngn = result[
             (result["code_intervention"] == "itn_routine")
             & (result["currency"] == "NGN")
@@ -307,4 +307,4 @@ class TestGenerateBudget(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main(argv=["first-arg-is-ignored"], exit=False)
+    unittest.main()

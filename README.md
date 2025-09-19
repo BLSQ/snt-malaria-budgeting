@@ -1,8 +1,12 @@
+# SNT Malaria Budgeting
 
-## Service Setup
+A Python library for calculating malaria intervention budgets across different countries and time periods.
 
-Install the required dependencies:
-```
+## Installation
+
+Install the package and its dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -34,4 +38,24 @@ for year in range(start_year, end_year + 1):
     budgets.append(get_budget(data, country, year, data.settings))
 
 print(budgets)
+```
+
+## Development
+
+### Running Tests
+
+```bash
+pip install pytest pytest-cov
+```
+
+Run the test suite:
+
+```bash
+pytest
+pytest -v # verbose output
+pytest --cov=snt_malaria_budgeting --cov-report=html # with coverage report
+
+# specific test files or methods:
+pytest tests/core/test_budget_calculator.py
+pytest tests/core/test_budget_calculator.py::TestBudgetCalculator::test_iptp_quantification
 ```

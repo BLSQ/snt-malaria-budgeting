@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from fastapi.responses import JSONResponse
-from models.models import CostSettingItems
+from ..models.models import CostSettingItems
 
 
 def generate_budget(
@@ -732,7 +731,7 @@ def get_country_budgets(data):
             print(f"Fetching budget for year: {year}")
             budgets.append(get_budget(data, data.country, year, data.settings))
 
-        return JSONResponse(content={"budgets": budgets})
+        return {"budgets": budgets}
 
     except Exception as e:
         print(f"Error fetching budgets: {e}")
