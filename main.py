@@ -9,6 +9,7 @@ from budgetController import get_country_budgets
 
 app = FastAPI()
 
+
 @app.post("/get_budgets", status_code=status.HTTP_200_OK)
 async def get_budgets(data: InterventionCostModel):
     """Endpoint to get budget estimates based on intervention cost model.
@@ -49,7 +50,7 @@ async def get_budgets(data: InterventionCostModel):
     """
 
     try:
-      return get_country_budgets(data)      
+        return get_country_budgets(data)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -57,11 +58,9 @@ async def get_budgets(data: InterventionCostModel):
 
 @app.get("/test")
 async def run():
-    output = 'test success'
-    return {
-        'output': output
-    }
+    output = "test success"
+    return {"output": output}
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='127.0.0.1', port=5001)
+    uvicorn.run(app, host="127.0.0.1", port=5001)

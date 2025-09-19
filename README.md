@@ -5,7 +5,7 @@
 
 2. Create a new virtual environment named 'venv': `python -m venv venv`
 
-3. Activate the virtual environment by running the following command in linux `source venv/bin/activate`. 
+3. Activate the virtual environment by running the following command in linux `source venv/bin/activate`.
 In windows, the command is `venv\Scripts\activate`
 
 4. Install the required dependencies:
@@ -17,5 +17,5 @@ pip install -r requirements.txt
 5. Set the following environment variables:
 - `PYTHONPATH=%PYTHONPATH%;C:\Your\Project\Root`
 
-6. Run the application in the service folder: 
+6. Run the application in the service folder:
 - `uvicorn main:app  --port 5001`
