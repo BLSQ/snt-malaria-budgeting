@@ -1,21 +1,37 @@
 
-### Service Setup
+## Service Setup
 
-1. Open a terminal and navigate to the root of the repository.
-
-2. Create a new virtual environment named 'venv': `python -m venv venv`
-
-3. Activate the virtual environment by running the following command in linux `source venv/bin/activate`.
-In windows, the command is `venv\Scripts\activate`
-
-4. Install the required dependencies:
+Install the required dependencies:
 ```
-cd budgetingService
 pip install -r requirements.txt
 ```
 
-5. Set the following environment variables:
-- `PYTHONPATH=%PYTHONPATH%;C:\Your\Project\Root`
+## Example usage
 
-6. Run the application in the service folder:
-- `uvicorn main:app  --port 5001`
+To fetch budgets for a given country and years:
+
+```python
+from snt_malaria_budgeting import get_budget
+
+country = "rdc"
+start_year = 2025
+end_year = 2027
+settings = {
+    "smc_buffer": 1.5,
+    "vacc_doses_per_child": 4,
+    "currency": "NGN",
+}
+interventions = [
+    {"name": "smc", "type": "SP+AQ", "places": ["Tshopo:Opala"]},
+    {"name": "vacc", "type": "R21", "places": ["Tshopo:Opala"]},
+    {"name": "iptp", "type": "SP", "places": ["Tshopo:Opala"]},
+]
+
+budgets = []
+
+for year in range(start_year, end_year + 1):
+    print(f"Fetching budget for year: {year}")
+    budgets.append(get_budget(data, country, year, data.settings))
+
+print(budgets)
+```
