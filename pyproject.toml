@@ -43,6 +43,7 @@ dev = [
     "pytest-cov>=2.0",
     "ruff==0.13.1",
     "mypy>=0.812",
+    "pandas-stubs",
 ]
 test = [
     "pytest>=6.0",
