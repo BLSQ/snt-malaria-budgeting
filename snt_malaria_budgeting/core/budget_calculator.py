@@ -712,26 +712,3 @@ def get_budget(data, country, year, settings):
     except Exception as e:
         print(f"Error generating budget: {e}")
         raise e
-
-
-def get_country_budgets(data):
-    """Fetches budgets for a given country and time range."""
-    try:
-        if data.startYear is None or data.endYear is None:
-            raise ValueError("Start year and end year must be provided.")
-        if data.startYear > data.endYear:
-            raise ValueError("Start year cannot be greater than end year.")
-        if data.country is None or data.country.strip() == "":
-            raise ValueError("Country must be provided.")
-
-        budgets = []
-
-        for year in range(data.startYear, data.endYear + 1):
-            print(f"Fetching budget for year: {year}")
-            budgets.append(get_budget(data, data.country, year, data.settings))
-
-        return {"budgets": budgets}
-
-    except Exception as e:
-        print(f"Error fetching budgets: {e}")
-        raise e
