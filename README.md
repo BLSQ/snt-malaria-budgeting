@@ -15,27 +15,36 @@ pip install -r requirements.txt
 To fetch budgets for a given country and years:
 
 ```python
-from snt_malaria_budgeting import get_budget
+from snt_malaria_budgeting import calculate_budget
 
-country = "rdc"
+country = "DRC"
 start_year = 2025
 end_year = 2027
-settings = {
-    "smc_buffer": 1.5,
-    "vacc_doses_per_child": 4,
-    "currency": "NGN",
-}
 interventions = [
     {"name": "smc", "type": "SP+AQ", "places": ["Tshopo:Opala"]},
     {"name": "vacc", "type": "R21", "places": ["Tshopo:Opala"]},
     {"name": "iptp", "type": "SP", "places": ["Tshopo:Opala"]},
 ]
+settings = {
+    "smc_buffer": 1.5,
+    "vacc_doses_per_child": 4,
+    "currency": "NGN",
+}
 
 budgets = []
 
 for year in range(start_year, end_year + 1):
     print(f"Fetching budget for year: {year}")
-    budgets.append(get_budget(data, country, year, data.settings))
+    budgets.append(
+        calculate_budget(
+            country=country,
+            year=year,
+            interventions=interventions,
+            settings=settings,
+            cost_df=cost_df,
+            population_df=population_df,
+        )
+    )
 
 print(budgets)
 ```
