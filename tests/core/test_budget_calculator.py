@@ -107,7 +107,7 @@ class TestBudgetCalculator(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        cls.cost_df = pd.DataFrame(
             {
                 "code_intervention": [
                     "itn_campaign",
@@ -203,7 +203,7 @@ class TestBudgetCalculator(unittest.TestCase):
         """Helper method to run generate_budget with mocked file reads."""
         mock_read_csv.return_value = self.mock_cm_data
         return generate_budget(
-            self.scen_data, self.cost_data, self.settings, self.mock_population_data
+            self.scen_data, self.cost_df, self.settings, self.mock_population_data
         )
 
     def test_itn_campaign_quantification(self):

@@ -5,7 +5,7 @@ from ..models.models import CostSettingItems
 
 def generate_budget(
     scen_data: pd.DataFrame,
-    cost_data: pd.DataFrame,
+    cost_df: pd.DataFrame,
     settings: CostSettingItems,
     target_population: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -22,7 +22,7 @@ def generate_budget(
         scen_data (pd.DataFrame): DataFrame containing scenario information, including
                                   which interventions are active in which administrative
                                   divisions (`adm1`, `adm2`) and year.
-        cost_data (pd.DataFrame): DataFrame with cost information for different
+        cost_df (pd.DataFrame): DataFrame with cost information for different
                                   intervention components, including unit costs in
                                   multiple currencies.
         settings (CostSettingItems): Settings object containing various programmatic
@@ -455,7 +455,7 @@ def generate_budget(
     # Join with cost data
     budget = pd.merge(
         budget,
-        cost_data,
+        cost_df,
         on=["code_intervention", "type_intervention", "unit"],
         how="left",
     )
@@ -511,19 +511,21 @@ def generate_budget(
     return budget
 
 
-def get_budget(data, country, year, settings):
-    cost_file = f"./data/{country.lower()}-demo-data-pre-processed/costs.xlsx"
-    pop_file = f"./data/{country.lower()}-demo-data-pre-processed/data-needs-not-user-defined.xlsx"
-
+def get_budget(
+    country,
+    year,
+    interventions_input,
+    settings,
+    cost_df,
+    population_df,
+    cost_overrides=[],
+):
     try:
-        pop_data = pd.read_excel(pop_file, sheet_name="population")
-        places = pop_data[["adm1", "adm2"]].drop_duplicates().values.tolist()
+        places = population_df[["adm1", "adm2"]].drop_duplicates().values.tolist()
 
         ######################################
         # convert from json input to dataframe
         ######################################
-        settings = data.settings
-
         scen_data = pd.DataFrame(places, columns=["adm1", "adm2"])
         scen_data["adm0"] = (
             country  # Add a new column 'adm0' and set its value to "Nigeria"
@@ -538,7 +540,7 @@ def get_budget(data, country, year, settings):
             ########################################################################
             intervention = [
                 intervention
-                for intervention in data.interventions
+                for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
             intervention_places = (
@@ -557,7 +559,7 @@ def get_budget(data, country, year, settings):
             ################################################################
             intervention = [
                 intervention
-                for intervention in data.interventions
+                for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
             scen_data[column_name] = (
@@ -606,16 +608,12 @@ def get_budget(data, country, year, settings):
         # for CM private
         scen_data["code_cm_private"] = 1
 
-        # todo: for now, cost data is read from a file
-        cost_data = pd.read_excel(cost_file, sheet_name=0)
-
-        input_costs_dict = [cost.dict() for cost in data.costs]
-
         ######################################
-        # merge cost_data with data.costs
+        # merge cost_df with cost_overrides
         ######################################
+        input_costs_dict = [cost.dict() for cost in cost_overrides]
         if input_costs_dict.__len__() > 0:
-            validation = cost_data.merge(
+            validation = cost_df.merge(
                 pd.DataFrame(input_costs_dict),
                 on=["code_intervention", "type_intervention", "cost_class", "unit"],
                 how="inner",
@@ -625,27 +623,27 @@ def get_budget(data, country, year, settings):
             if validation.__len__() != input_costs_dict.__len__():
                 raise ValueError("Cost data override validation failed.")
 
-            cost_data = cost_data.merge(
+            cost_df = cost_df.merge(
                 pd.DataFrame(input_costs_dict),
                 on=["code_intervention", "type_intervention", "cost_class", "unit"],
                 how="left",
                 suffixes=("", "_y"),
             )
-            cost_data["usd_cost"] = cost_data["usd_cost_y"].combine_first(
-                cost_data["usd_cost"]
+            cost_df["usd_cost"] = cost_df["usd_cost_y"].combine_first(
+                cost_df["usd_cost"]
             )
 
             # TODO: need a better way to support different country
             if country == "NGA":
-                cost_data["ngn_cost"] = cost_data["ngn_cost_y"].combine_first(
-                    cost_data["ngn_cost"]
+                cost_df["ngn_cost"] = cost_df["ngn_cost_y"].combine_first(
+                    cost_df["ngn_cost"]
                 )
             elif country == "CDF":  # DRC
-                cost_data["cdf_cost"] = cost_data["cdf_cost_y"].combine_first(
-                    cost_data["cdf_cost"]
+                cost_df["cdf_cost"] = cost_df["cdf_cost_y"].combine_first(
+                    cost_df["cdf_cost"]
                 )
 
-        budget = generate_budget(scen_data, cost_data, settings, pop_data)
+        budget = generate_budget(scen_data, cost_df, settings, population_df)
 
         def get_cost_class_data(code, currency, year, cost_class):
             """

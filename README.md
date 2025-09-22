@@ -15,7 +15,7 @@ pip install -r requirements.txt
 To fetch budgets for a given country and years:
 
 ```python
-from snt_malaria_budgeting import calculate_budget
+from snt_malaria_budgeting import get_budget
 
 country = "DRC"
 start_year = 2025
@@ -36,13 +36,14 @@ budgets = []
 for year in range(start_year, end_year + 1):
     print(f"Fetching budget for year: {year}")
     budgets.append(
-        calculate_budget(
+        get_budget(
             country=country,
             year=year,
-            interventions=interventions,
+            interventions_input=interventions,
             settings=settings,
             cost_df=cost_df,
             population_df=population_df,
+            cost_overrides=[], # optional
         )
     )
 
