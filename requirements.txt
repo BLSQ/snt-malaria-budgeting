@@ -1,0 +1,2 @@
+# Development and formatting tools
+ruff==0.13.1
