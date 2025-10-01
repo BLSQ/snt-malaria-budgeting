@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.0...v0.1.1) (2025-10-01)
+
+
+### Bug Fixes
+
+* Add build package to project dependencies ([ae59592](https://github.com/BLSQ/snt-malaria-budgeting/commit/ae59592f7c598d2b85b878e7ffa361174b24ae79))
+
 ## 0.1.0 (2025-10-01)
 
 
