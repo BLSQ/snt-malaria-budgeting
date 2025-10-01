@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 
@@ -39,8 +39,7 @@ class CostItems(BaseModel):
 class InterventionCostModel(BaseModel):
     startYear: int
     endYear: int
-    # coverage: int
-    interventions: List[InterventionDetailModel] = []
+    interventions: List[InterventionDetailModel] = Field(default_factory=list)
     assumptions: dict = {
         "itn_campaign_divisor": 1.8,
         "itn_campaign_bale_size": 50,
@@ -70,7 +69,6 @@ class InterventionCostModel(BaseModel):
         "irs_type": "Sumishield",
         "lsm_type": "Bti",
         "vacc_type": "R21",
-        # "currency": "USD",
     }
     costs: List[CostItems] = []
     country: str = "NGA"
