@@ -5,7 +5,6 @@ from snt_malaria_budgeting.core.budget_calculator import generate_budget
 
 
 class TestGenerateBudget(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         """Set up mock dataframes and settings once for all tests."""
