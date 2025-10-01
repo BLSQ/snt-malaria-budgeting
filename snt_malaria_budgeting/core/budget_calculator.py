@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from .PATH_generate_budget import generate_budget
 
 def get_budget(
@@ -9,8 +8,8 @@ def get_budget(
     settings,
     cost_df,
     population_df,
-    currency,
-    scenario,
+    currency='USD',
+    scenario='Test Scenario',
     cost_overrides=[],
 ):
     try:
@@ -125,8 +124,13 @@ def get_budget(
             cost_df["usd_cost"] = cost_df["usd_cost_y"].combine_first(
                 cost_df["usd_cost"]
             )
+        # Normalize cost_df columns as required by generate_budget
+        if "local_currency_cost" not in cost_df.columns and f"{currency.lower()}_cost" in cost_df.columns:
+            cost_df["local_currency_cost"] = cost_df[f"{currency.lower()}_cost"]
+        if "cost_year_for_analysis" not in cost_df.columns and "cost_year" in cost_df.columns:
+            cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
 
-        budget = generate_budget(scen_data, cost_df, population_df, settings, "adm2", "NGN" )
+        budget = generate_budget(scen_data, cost_df, population_df, settings, "adm2", currency.upper())
 
         def get_cost_class_data(code, currency, year, cost_class):
             """
@@ -158,7 +162,11 @@ def get_budget(
             "itn_campaign",
         ]
 
-        intervention_costs = {"year": year, "interventions": [], "scenairo_name": scenario}
+        intervention_costs = {
+            "year": year,
+            "interventions": [],
+            "scenario_name": scenario
+        }
 
         for code, name in zip(interventions, interventions):
             costs = []

@@ -49,7 +49,8 @@ def generate_budget(
     
     def get_pop_column(label: str, default_col: List[str]) -> List[str]:
         pop_assumption = assumptions.get(label)
-        if not pop_assumption: return default_col
+        if not pop_assumption:
+            return default_col
         mapping = {
             "Total population": ["pop_total"], "Children under 5": ["pop_0_5"],
             "Children under 5 and pregnant women": ["pop_0_5", "pop_pw"],
@@ -136,7 +137,8 @@ def generate_budget(
         all_quantifications.append(df_long)
 
     # --- Intervention Costing & Final Assembly (Partner Guide: 4.4, 4.5, 4.6) ---
-    if not all_quantifications: return pd.DataFrame() 
+    if not all_quantifications:
+        return pd.DataFrame() 
 
     budget = pd.concat(all_quantifications, ignore_index=True, sort=False)
     
