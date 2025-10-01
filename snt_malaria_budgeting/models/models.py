@@ -25,7 +25,6 @@ class InterventionDetailModel(BaseModel):
     type: str
     places: List[str]
 
-    
 
 class CostItems(BaseModel):
     code_intervention: str
@@ -35,6 +34,7 @@ class CostItems(BaseModel):
     ngn_cost: float = 0
     usd_cost: float = 0
     cost_year: int = 0
+
 
 class InterventionCostModel(BaseModel):
     startYear: int
@@ -46,21 +46,17 @@ class InterventionCostModel(BaseModel):
         "itn_campaign_bale_size": 50,
         "itn_campaign_buffer_mult": 1.1,
         "itn_campaign_coverage": 1.0,
-        
         "itn_routine_coverage": 0.3,
         "itn_routine_buffer_mult": 1.1,
-        
         "iptp_anc_coverage": 0.8,
         "iptp_doses_per_pw": 3,
         "iptp_buffer_mult": 1.1,
-        
         "smc_age_string": "0.18,0.77",  # proportion of population 3-11 months, 12-59 months
         "smc_pop_prop_3_11": 0.18,
         "smc_pop_prop_12_59": 0.77,
         "smc_coverage": 1.0,
         "smc_monthly_rounds": 4,
         "smc_buffer_mult": 1.1,
-
         "pmc_coverage": 0.85,
         "pmc_touchpoints": 4,
         "pmc_tablet_factor": 0.75,
@@ -68,7 +64,6 @@ class InterventionCostModel(BaseModel):
         "vacc_coverage": 0.84,
         "vacc_doses_per_child": 4,
         "vacc_buffer_mult": 1.1,
-
         "iptp_type": "SP",
         "smc_type": "SP+AQ",
         "pmc_type": "SP",

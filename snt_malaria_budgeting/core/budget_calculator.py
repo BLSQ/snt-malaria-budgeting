@@ -1,6 +1,7 @@
 import pandas as pd
 from .PATH_generate_budget import generate_budget
 
+
 def get_budget(
     country,
     year,
@@ -8,8 +9,8 @@ def get_budget(
     settings,
     cost_df,
     population_df,
-    currency='USD',
-    scenario='Test Scenario',
+    currency="USD",
+    scenario="Test Scenario",
     cost_overrides=[],
 ):
     try:
@@ -39,9 +40,9 @@ def get_budget(
                 intervention[0].places if len(intervention) > 0 else []
             )
             scen_data[column_name] = scen_data.apply(
-                lambda row: 1
-                if (f"{row['adm1']}:{row['adm2']}" in intervention_places)
-                else 0,
+                lambda row: (
+                    1 if (f"{row['adm1']}:{row['adm2']}" in intervention_places) else 0
+                ),
                 axis=1,
             )
 
@@ -125,12 +126,20 @@ def get_budget(
                 cost_df["usd_cost"]
             )
         # Normalize cost_df columns as required by generate_budget
-        if "local_currency_cost" not in cost_df.columns and f"{currency.lower()}_cost" in cost_df.columns:
+        if (
+            "local_currency_cost" not in cost_df.columns
+            and f"{currency.lower()}_cost" in cost_df.columns
+        ):
             cost_df["local_currency_cost"] = cost_df[f"{currency.lower()}_cost"]
-        if "cost_year_for_analysis" not in cost_df.columns and "cost_year" in cost_df.columns:
+        if (
+            "cost_year_for_analysis" not in cost_df.columns
+            and "cost_year" in cost_df.columns
+        ):
             cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
 
-        budget = generate_budget(scen_data, cost_df, population_df, settings, "adm2", currency.upper())
+        budget = generate_budget(
+            scen_data, cost_df, population_df, settings, "adm2", currency.upper()
+        )
 
         def get_cost_class_data(code, currency, year, cost_class):
             """
@@ -165,7 +174,7 @@ def get_budget(
         intervention_costs = {
             "year": year,
             "interventions": [],
-            "scenario_name": scenario
+            "scenario_name": scenario,
         }
 
         for code, name in zip(interventions, interventions):
@@ -174,9 +183,7 @@ def get_budget(
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
-                cost_class_data = get_cost_class_data(
-                    code, currency, year, cost_class
-                )
+                cost_class_data = get_cost_class_data(code, currency, year, cost_class)
                 if cost_class_data["cost"] > 0:
                     costs.append(
                         {
