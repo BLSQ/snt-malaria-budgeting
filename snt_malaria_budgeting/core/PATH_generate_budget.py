@@ -71,7 +71,7 @@ def generate_budget(
             "Children 1-2": ["pop_1_2"],
             "Pregnant women": ["pop_pw"],
         }
-        return mapping.get(pop_assumption, default_col)
+        return mapping.get(str(pop_assumption), default_col)
 
     itn_campaign_pop_col = get_pop_column(
         "ITN Campaign: target population", ["pop_total"]
