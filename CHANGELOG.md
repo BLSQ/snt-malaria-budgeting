@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.1...v0.1.2) (2025-10-02)
+
+
+### Bug Fixes
+
+* Support Python 3.9 for now for IASO compatibility ([f132c4a](https://github.com/BLSQ/snt-malaria-budgeting/commit/f132c4a1d499ee0d48058a2e76520c9c0aa18519))
+
 ## [0.1.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.0...v0.1.1) (2025-10-01)
 
 
