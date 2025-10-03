@@ -74,9 +74,9 @@ class TestGenerateBudget(unittest.TestCase):
                 "scenario_name": ["Full Scenario"],
                 "scenario_description": ["Test with all interventions"],
                 "code_itn_campaign": [1],
-                "type_itn_campaign": ["Standard"],
+                "type_itn_campaign": ["Dual AI"],
                 "code_itn_routine": [1],
-                "type_itn_routine": ["Standard"],
+                "type_itn_routine": ["Dual AI"],
                 "code_iptp": [1],
                 "type_iptp": ["SP"],
                 "code_smc": [1],
@@ -94,13 +94,13 @@ class TestGenerateBudget(unittest.TestCase):
                 "adm1": ["State A"],
                 "adm2": ["LGA 1"],
                 "year": [2025],
-                "pop_total": [10000],
-                "pop_pw": [200],
-                "pop_0_5": [1000],
-                "pop_0_1": [200],
-                "pop_1_2": [200],
-                "pop_vaccine_5_36_months": [800],
-                "pop_vaccine_5_36_mois": [800],
+                "pop_total": [342988.7383],
+                "pop_pw": [17149.43692],
+                "pop_0_5": [63109.92785],
+                "pop_0_1": [13719.54953],
+                "pop_1_2": [13719.54953],
+                "pop_vaccine_5_36_months": [10975.63963],
+                "pop_vaccine_5_36_mois": [10975.63963],
             }
         )
 
@@ -135,9 +135,9 @@ class TestGenerateBudget(unittest.TestCase):
                     "cm_public",
                 ],
                 "type_intervention": [
-                    "Standard",
-                    "Standard",
-                    "Standard",
+                    "Dual AI",
+                    "Dual AI",
+                    "Dual AI",
                     "SP",
                     "SP+AQ",
                     "SP+AQ",
@@ -171,38 +171,38 @@ class TestGenerateBudget(unittest.TestCase):
                 "cost_class": ["Commodity"] * 15,
                 "cost_year_for_analysis": 2025,
                 "usd_cost": [
-                    2.0,
-                    100.0,
-                    2.1,
-                    0.5,
-                    1.0,
-                    1.0,
-                    0.0,
-                    0.6,
-                    0.0,
+                    3.490605554,
+                    6.25,
+                    3.490605554,
+                    0.50558094,
+                    0.24375,
+                    0.271875,
+                    1.33,
+                    0.204375,
+                    0.08125,
                     4.0,
-                    0.0,
-                    0.2,
-                    1.5,
-                    5.0,
-                    3.0,
+                    1.0,
+                    0.4625,
+                    1.22,
+                    2.003125,
+                    0.439375,
                 ],
                 "local_currency_cost": [
-                    1800,
-                    90000,
-                    1890,
-                    450,
-                    900,
-                    900,
-                    0,
-                    540,
-                    0,
-                    3600,
-                    0,
-                    180,
-                    1350,
-                    4500,
-                    2700,
+                    5584.968886,
+                    10000,
+                    5584.968886,
+                    808.929504,
+                    390.0,
+                    435.0,
+                    2128.0,
+                    327.0,
+                    130.0,
+                    5800.0,
+                    584.0,
+                    740.0,
+                    1952.0,
+                    3205.0,
+                    703.0,
                 ],
                 "cost_name": ["test"] * 15,
             }
@@ -222,8 +222,8 @@ class TestGenerateBudget(unittest.TestCase):
         """Verify ITN Campaign quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "itn_campaign"]
-        # Expected nets = 10000 pop * 1.0 coverage * 1.1 buffer / 1.8 = 5555.55
-        expected_nets = 10000 * 1.0 * 1.1 / 1.8
+        # Expected nets = 342988.7383 pop * 1.0 coverage * 1.0 buffer / 1.8 = 5555.55
+        expected_nets = 342988.7383 * 1.0 * 1.1 / 1.8
         self.assertAlmostEqual(
             df[df["unit"] == "per ITN"]["quantity"].iloc[0], expected_nets, 2
         )
@@ -236,43 +236,44 @@ class TestGenerateBudget(unittest.TestCase):
         """Verify ITN Routine quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "itn_routine"]
-        # Expected nets = (200 pw + 1000 u5) * 0.3 * 1.1 buffer = 396
-        self.assertAlmostEqual(df["quantity"].iloc[0], 396.0)
+
+        # Expected nets = (17149.43692 pw + 63109.92785 u5) * 0.3 * 1.1 buffer = 26485.59037
+        self.assertAlmostEqual(df["quantity"].iloc[0], 26485.59037, 2)
 
     def test_iptp_quantification(self):
         """Verify IPTp quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "iptp"]
-        # Expected doses = 200 pw * 0.8 ANC * 3 doses * 1.1 buffer = 528
-        self.assertAlmostEqual(df["quantity"].iloc[0], 528.0)
+        # Expected doses = 17149.43692 pw * 0.8 ANC * 3 doses * 1.1 buffer = 528
+        self.assertAlmostEqual(df["quantity"].iloc[0], 45274.5134688, 2)
 
     def test_smc_quantification(self):
         """Verify SMC quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "smc"]
-        # Expected 3-11m packs = 1000 u5 * 0.18 * 4 rounds * 1.1 buffer = 792
+        # Expected 3-11m packs = 63109.9279 u5 * 0.18 * 4 rounds * 1.1 buffer = 792
         self.assertAlmostEqual(
-            df[df["unit"].str.contains("3-11")]["quantity"].iloc[0], 792.0
+            df[df["unit"].str.contains("3-11")]["quantity"].iloc[0], 49983.0629, 2
         )
-        # Expected 12-59m packs = 1000 u5 * 0.77 * 4 rounds * 1.1 buffer = 3388
+        # Expected 12-59m packs = 63109.9279 u5 * 0.77 * 4 rounds * 1.1 buffer = 3388
         self.assertAlmostEqual(
-            df[df["unit"].str.contains("12-59")]["quantity"].iloc[0], 3388.0
+            df[df["unit"].str.contains("12-59")]["quantity"].iloc[0], 213816.4356, 2
         )
 
     def test_pmc_quantification(self):
         """Verify PMC quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "pmc"]
-        # Expected SP doses = (200 u1 * 0.85 * 4 * 0.75 * 1.1) + (200 u2 * 0.85 * 4 * 2 * 0.75 * 1.1)
+        # Expected SP doses = (13719.54953 u1 * 0.85 * 4 * 0.75 * 1.1) + (13719.54953 u2 * 0.85 * 4 * 2 * 0.75 * 1.1)
         # 561 + 1122 = 1683
-        self.assertAlmostEqual(df[df["unit"] == "per SP"]["quantity"].iloc[0], 1683.0)
+        self.assertAlmostEqual(df[df["unit"] == "per SP"]["quantity"].iloc[0], 115450.0093, 2)
 
     def test_vaccine_quantification(self):
         """Verify Vaccine quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "vacc"]
-        # Expected doses = 800 pop * 0.84 cov * 1.1 wastage * 4 doses = 2956.8
-        self.assertAlmostEqual(df[df["unit"] == "per dose"]["quantity"].iloc[0], 2956.8)
+        # Expected doses = 10975.63963 pop * 0.84 cov * 1.1 wastage * 4 doses = 40565.96406
+        self.assertAlmostEqual(df[df["unit"] == "per dose"]["quantity"].iloc[0], 40565.96406, 2)
 
     # def test_case_management_quantification(self):
     #     """Verify Case Management quantities are loaded correctly."""
@@ -284,17 +285,24 @@ class TestGenerateBudget(unittest.TestCase):
     def test_final_cost_calculation(self):
         """Verify a final cost_element calculation."""
         result = self.run_generate_budget()
-        # IPTp: 528 doses * $0.5/dose = $264
+        # IPTp: 45274.5134688 doses * $0.50558094/dose = $22889.93108
         iptp_cost = result[
             (result["code_intervention"] == "iptp") & (result["currency"] == "USD")
         ]["cost_element"].iloc[0]
-        self.assertAlmostEqual(iptp_cost, 264.0)
-        # ITN Routine: 360 nets * 1890 NGN/net *1.1 buffer = 748,440 NGN
+        self.assertAlmostEqual(iptp_cost, 22889.93108, 2)
+        # ITN Routine: 26485.59037 nets * 5584.968886 NGN/net = 147921198.2 NGN
         itn_routine_cost_ngn = result[
             (result["code_intervention"] == "itn_routine")
             & (result["currency"] == "NGN")
         ]["cost_element"].iloc[0]
-        self.assertAlmostEqual(itn_routine_cost_ngn, 748440.0)
+        self.assertAlmostEqual(itn_routine_cost_ngn, 147921198.2, 1)
+
+        # ITN Routine: 26485.59037 nets *  3.490605554 USD/net = 92450.74886
+        itn_routine_cost_ngn = result[
+            (result["code_intervention"] == "itn_routine")
+            & (result["currency"] == "USD")
+        ]["cost_element"].iloc[0]
+        self.assertAlmostEqual(itn_routine_cost_ngn, 92450.74886, 1)
 
     def test_output_structure_and_completeness(self):
         """Verify the final DataFrame contains all expected interventions and columns."""
