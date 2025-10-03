@@ -222,12 +222,12 @@ class TestGenerateBudget(unittest.TestCase):
         """Verify ITN Campaign quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "itn_campaign"]
-        # Expected nets = 342988.7383 pop * 1.0 coverage * 1.0 buffer / 1.8 = 5555.55
+        # Expected nets = 342988.7383 pop * 1.0 coverage * 10% buffer / 1.8 = 209604.229
         expected_nets = 342988.7383 * 1.0 * 1.1 / 1.8
         self.assertAlmostEqual(
             df[df["unit"] == "per ITN"]["quantity"].iloc[0], expected_nets, 2
         )
-        # Expected bales = 5555.55 / 50 = 111.11
+        # Expected bales = 190549.2991 / 50 = 3810.985982
         self.assertAlmostEqual(
             df[df["unit"] == "per bale"]["quantity"].iloc[0], expected_nets / 50, 2
         )
@@ -266,14 +266,18 @@ class TestGenerateBudget(unittest.TestCase):
         df = result[result["code_intervention"] == "pmc"]
         # Expected SP doses = (13719.54953 u1 * 0.85 * 4 * 0.75 * 1.1) + (13719.54953 u2 * 0.85 * 4 * 2 * 0.75 * 1.1)
         # 561 + 1122 = 1683
-        self.assertAlmostEqual(df[df["unit"] == "per SP"]["quantity"].iloc[0], 115450.0093, 2)
+        self.assertAlmostEqual(
+            df[df["unit"] == "per SP"]["quantity"].iloc[0], 115450.0093, 2
+        )
 
     def test_vaccine_quantification(self):
         """Verify Vaccine quantities."""
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "vacc"]
         # Expected doses = 10975.63963 pop * 0.84 cov * 1.1 wastage * 4 doses = 40565.96406
-        self.assertAlmostEqual(df[df["unit"] == "per dose"]["quantity"].iloc[0], 40565.96406, 2)
+        self.assertAlmostEqual(
+            df[df["unit"] == "per dose"]["quantity"].iloc[0], 40565.96406, 2
+        )
 
     # def test_case_management_quantification(self):
     #     """Verify Case Management quantities are loaded correctly."""
@@ -288,21 +292,51 @@ class TestGenerateBudget(unittest.TestCase):
         # IPTp: 45274.5134688 doses * $0.50558094/dose = $22889.93108
         iptp_cost = result[
             (result["code_intervention"] == "iptp") & (result["currency"] == "USD")
-        ]["cost_element"].iloc[0]
+        ]["cost_element"].sum()
         self.assertAlmostEqual(iptp_cost, 22889.93108, 2)
+
+        # ITN Campaign: 209604.229 nets * 3.490605554 USD/net = 731645.6858 USD
+        # ITN Campaign: 4192.0846 bales * 6.25 USD/bale = 26200.5287 USD
+        itn_campaign_cost_usd = result[
+            (result["code_intervention"] == "itn_campaign")
+            & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(itn_campaign_cost_usd, 731645.6858 + 26200.5287, 2)
+
         # ITN Routine: 26485.59037 nets * 5584.968886 NGN/net = 147921198.2 NGN
         itn_routine_cost_ngn = result[
             (result["code_intervention"] == "itn_routine")
             & (result["currency"] == "NGN")
-        ]["cost_element"].iloc[0]
+        ]["cost_element"].sum()
         self.assertAlmostEqual(itn_routine_cost_ngn, 147921198.2, 1)
 
         # ITN Routine: 26485.59037 nets *  3.490605554 USD/net = 92450.74886
         itn_routine_cost_ngn = result[
             (result["code_intervention"] == "itn_routine")
             & (result["currency"] == "USD")
-        ]["cost_element"].iloc[0]
+        ]["cost_element"].sum()
         self.assertAlmostEqual(itn_routine_cost_ngn, 92450.74886, 1)
+
+        # Vaccine: 40565.96406 doses * $4.0/dose = $162263.85624
+        # Vaccine: 9219.53 operational cost per child = $9219.537
+        vacc_cost = result[
+            (result["code_intervention"] == "vacc") & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(vacc_cost, 171483.393579, 2)
+
+        # SMC 3-11m: 49983.062857 packs * $0.24375/pack = $12183.375
+        # SMC 12-59m: 213816.435556 packs * $0.271875/pack = $58131.3434
+
+        smc_cost = result[
+            (result["code_intervention"] == "smc") & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(smc_cost, 12183.375 + 58131.3434, 2)
+
+        # PMC: 115450.009295 doses * $0.204375/dose = $23595.09
+        pmc_cost = result[
+            (result["code_intervention"] == "pmc") & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(pmc_cost, 23595.0956, 2)
 
     def test_output_structure_and_completeness(self):
         """Verify the final DataFrame contains all expected interventions and columns."""
