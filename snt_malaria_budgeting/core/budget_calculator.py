@@ -1,18 +1,23 @@
+from typing import Dict, List, Any, Optional
 import pandas as pd
+from ..models.models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
 
 def get_budget(
-    country,
-    year,
-    interventions_input,
-    settings,
-    cost_df,
-    population_df,
-    currency="USD",
-    scenario="Test Scenario",
-    cost_overrides=[],
-):
+    country: str,
+    year: int,
+    interventions_input: List[InterventionDetailModel],
+    settings: Dict[str, Any],
+    cost_df: pd.DataFrame,
+    population_df: pd.DataFrame,
+    currency: str = "USD",
+    scenario: str = "Test Scenario",
+    cost_overrides: Optional[List[CostItems]] = None,
+) -> Dict[str, Any]:
+    if cost_overrides is None:
+        cost_overrides = []
+
     try:
         places = population_df[["adm1", "adm2"]].drop_duplicates().values.tolist()
 
