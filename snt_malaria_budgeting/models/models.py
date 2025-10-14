@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Union
 
 
 class InterventionDetailModel(BaseModel):
     name: str
     type: str
-    places: List[str]
+    places: List[Union[str, int]]
 
 
 class CostItems(BaseModel):

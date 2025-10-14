@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
 def generate_budget(
@@ -7,7 +7,7 @@ def generate_budget(
     cost_data: pd.DataFrame,
     target_population: pd.DataFrame,
     assumptions: Dict[str, float],
-    spatial_planning_unit: str = "adm2",
+    spatial_planning_unit: Union[str, int],
     local_currency_symbol: str = "NGN",
 ) -> pd.DataFrame:
     """
@@ -31,15 +31,17 @@ def generate_budget(
     """
     # --- Environment & Inputs (Partner Guide: 4.1) ---
     spu = spatial_planning_unit
-    if spu not in ["adm1", "adm2", "adm3"]:
-        print(f"Warning: Unrecognized SPU = '{spu}'. Falling back to 'adm2'.")
-        spu = "adm2"
 
-    spu_cols = {
-        "adm1": ["adm1"],
-        "adm2": ["adm1", "adm2"],
-        "adm3": ["adm1", "adm2", "adm3"],
-    }[spu]
+    if spu in ["adm1", "adm2", "adm3"]:
+        spu_cols = {
+            "adm1": ["adm1"],
+            "adm2": ["adm1", "adm2"],
+            "adm3": ["adm1", "adm2", "adm3"],
+        }[spu]
+        join_keys = spu_cols + ["year"]
+    else:
+        spu_cols = spu if isinstance(spu, list) else [spu]
+
     join_keys = spu_cols + ["year"]
 
     # --- Cost Data Prep (Partner Guide: 4.1) ---
@@ -337,8 +339,8 @@ def generate_budget(
     )
     plan_id_base = (
         budget["scenario_name"].fillna("")
-        + " with "
-        + budget["cost_name"].fillna("")
+        # + " with "
+        # + budget["cost_name"].fillna("")
         + " with "
         + budget["assumption_type"].fillna("")
     )
@@ -350,10 +352,10 @@ def generate_budget(
 
     final_cols = spu_cols + [
         "year",
-        "scenario_name",
-        "scenario_description",
-        "cost_name",
-        "cost_description",
+        # "scenario_name",
+        # "scenario_description",
+        # "cost_name",
+        # "cost_description",
         "code_intervention",
         "type_intervention",
         "target_pop",

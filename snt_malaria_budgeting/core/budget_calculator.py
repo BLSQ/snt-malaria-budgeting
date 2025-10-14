@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from ..models.models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
@@ -14,17 +14,18 @@ def get_budget(
     currency: str = "USD",
     scenario: str = "Test Scenario",
     cost_overrides: Optional[List[CostItems]] = None,
+    spatial_planning_unit: Union[str, int] = "adm2",
 ) -> Dict[str, Any]:
     if cost_overrides is None:
         cost_overrides = []
 
     try:
-        places = population_df[["adm1", "adm2"]].drop_duplicates().values.tolist()
+        places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
 
         ######################################
         # convert from json input to dataframe
         ######################################
-        scen_data = pd.DataFrame(places, columns=["adm1", "adm2"])
+        scen_data = pd.DataFrame(places, columns=[spatial_planning_unit])
         scen_data["adm0"] = (
             country  # Add a new column 'adm0' and set its value to "Nigeria"
         )
@@ -46,7 +47,7 @@ def get_budget(
             )
             scen_data[column_name] = scen_data.apply(
                 lambda row: (
-                    1 if (f"{row['adm1']}:{row['adm2']}" in intervention_places) else 0
+                    1 if (row[spatial_planning_unit] in intervention_places) else 0
                 ),
                 axis=1,
             )
@@ -143,7 +144,12 @@ def get_budget(
             cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
 
         budget = generate_budget(
-            scen_data, cost_df, population_df, settings, "adm2", currency.upper()
+            scen_data=scen_data,
+            cost_data=cost_df,
+            target_population=population_df,
+            assumptions=settings,
+            spatial_planning_unit=spatial_planning_unit,
+            local_currency_symbol=currency.upper(),
         )
 
         def get_cost_class_data(code, currency, year, cost_class):
