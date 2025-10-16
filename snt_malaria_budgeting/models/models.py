@@ -2,24 +2,6 @@ from pydantic import BaseModel, Field
 from typing import List
 
 
-# Input parameter
-class InputInterventionPackage(BaseModel):
-    name: str
-    places: List[str]
-
-
-class InputScenario(BaseModel):
-    scenario: str
-    interventionPackage: List[InputInterventionPackage]
-    # coverage: int
-    insecticideResistance: int
-    vaccineEfficacy: int
-
-
-class InputConfigurationModel(BaseModel):
-    scenarios: List[InputScenario]
-
-
 class InterventionDetailModel(BaseModel):
     name: str
     type: str
@@ -72,5 +54,4 @@ class InterventionCostModel(BaseModel):
     }
     costs: List[CostItems] = []
     country: str = "NGA"
-    currency: str = "USD"
-    scenario: str = "default"
+
