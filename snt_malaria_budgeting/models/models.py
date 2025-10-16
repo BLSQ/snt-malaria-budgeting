@@ -54,4 +54,3 @@ class InterventionCostModel(BaseModel):
     }
     costs: List[CostItems] = []
     country: str = "NGA"
-
