@@ -1,514 +1,5 @@
 import pandas as pd
-import numpy as np
-from ..models.models import CostSettingItems
-
-
-def generate_budget(
-    scen_data: pd.DataFrame,
-    cost_df: pd.DataFrame,
-    settings: CostSettingItems,
-    target_population: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Generates a detailed budget by quantifying needs for various health interventions
-    and applying cost data.
-
-    This function translates the R script's logic into Python using pandas. It calculates
-    the required quantities for interventions like ITN campaigns, routine immunizations,
-    SMC, PMC, etc., based on population data and specific programmatic assumptions.
-    It then joins these quantifications with provided cost data to produce a final budget.
-
-    Args:
-        scen_data (pd.DataFrame): DataFrame containing scenario information, including
-                                  which interventions are active in which administrative
-                                  divisions (`adm1`, `adm2`) and year.
-        cost_df (pd.DataFrame): DataFrame with cost information for different
-                                  intervention components, including unit costs in
-                                  multiple currencies.
-        settings (CostSettingItems): Settings object containing various programmatic
-                                     assumptions and parameters for quantification.
-        target_population: pd.DataFrame: DataFrame with population data needed for quantifications.
-
-    Returns:
-        pd.DataFrame: A comprehensive budget DataFrame with costs broken down by
-                      intervention, location, year, and currency.
-    """
-
-    # Print a summary of the interventions, similar to the R version's cat() output
-    print("Costing scenario being generated for the following mix of interventions:")
-    summary_df = (
-        scen_data.melt(
-            id_vars=["adm1", "adm2", "year", "scenario_name", "scenario_description"],
-            value_vars=[col for col in scen_data.columns if col.startswith("code_")],
-            var_name="intervention",
-            value_name="included",
-        )
-        .assign(intervention=lambda df: df["intervention"].str.replace("code_", ""))
-        .query("included == 1")
-        .groupby(["intervention", "year"])
-        .agg(
-            states_targeted=("adm1", "nunique"),
-            lgas_targeted=("adm2", "nunique"),
-        )
-        .reset_index()
-    )
-    print(summary_df.to_string(index=False))
-
-    # --- Generate Quantifications ---
-
-    # --- ITN CAMPAIGNS ---
-    # Assumptions: pop / 1.8 nets; 50 nets per bale
-    # 1.8 nets per person is a common assumption for ITN campaigns
-
-    if (
-        "code_itn_campaign" in scen_data.columns
-        and scen_data["code_itn_campaign"].sum() > 0
-    ):
-        itn_q = scen_data[scen_data["code_itn_campaign"] == 1].merge(
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'annee']
-            # TODO: commented out year as there is only 2025 population data for now in Nigeria
-            target_population,
-            left_on=["adm1", "adm2"],
-            right_on=["adm1", "adm2"],
-            suffixes=("", "_right"),
-        )
-        itn_q["target_pop"] = itn_q["pop_total"] * settings.itn_campaign_coverage
-        itn_q["quant_nets"] = (
-            itn_q["target_pop"] / settings.itn_campaign_divisor
-        ) * settings.itn_campaign_buffer
-        itn_q["quant_bales"] = itn_q["quant_nets"] / settings.itn_campaign_bale_size
-        itn_q_long = itn_q.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "target_pop",
-                "type_itn_campaign",
-            ],
-            value_vars=["quant_nets", "quant_bales"],
-            var_name="unit",
-            value_name="quantity",
-        ).rename(columns={"type_itn_campaign": "type_intervention"})
-        itn_q_long["unit"] = itn_q_long["unit"].replace(
-            {"quant_nets": "per ITN", "quant_bales": "per bale"}
-        )
-        itn_q_long["code_intervention"] = "itn_campaign"
-    else:
-        itn_q_long = pd.DataFrame()
-
-    # --- ITN ROUTINE ---
-    if (
-        "code_itn_routine" in scen_data.columns
-        and scen_data["code_itn_routine"].sum() > 0
-    ):
-        itn_r_q = scen_data[scen_data["code_itn_routine"] == 1].merge(
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'annee']
-            # TODO: commented out year as there is only 2025 population data for now in Nigeria
-            target_population,
-            left_on=["adm1", "adm2"],
-            right_on=["adm1", "adm2"],
-            suffixes=("", "_right"),
-        )
-        # itn_r_q['target_pop'] = (itn_r_q['pop_0_5'] + itn_r_q['pop_femme_enceinte']) * settings.itn_routine_coverage
-        itn_r_q["target_pop"] = (
-            itn_r_q["pop_0_5"] + itn_r_q["pop_pw"]
-        ) * settings.itn_routine_coverage
-        itn_r_q["quant_nets"] = itn_r_q["target_pop"] * settings.itn_routine_buffer
-        itn_r_q_long = itn_r_q.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "target_pop",
-                "type_itn_routine",
-            ],
-            value_vars=["quant_nets"],
-            var_name="unit",
-            value_name="quantity",
-        ).rename(columns={"type_itn_routine": "type_intervention"})
-        itn_r_q_long["unit"] = itn_r_q_long["unit"].replace({"quant_nets": "per ITN"})
-        itn_r_q_long["code_intervention"] = "itn_routine"
-    else:
-        itn_r_q_long = pd.DataFrame()
-
-    # --- IPTp ---
-    # Assumptions: 3 doses, 80% ANC attendance, 10% buffer
-
-    if "code_iptp" in scen_data.columns and scen_data["code_iptp"].sum() > 0:
-        iptp_q = scen_data[scen_data["code_iptp"] == 1].merge(
-            #
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'annee']
-            target_population,
-            left_on=["adm1", "adm2"],
-            right_on=["adm1", "adm2"],
-            suffixes=("", "_right"),
-        )
-        # TODO: check difference between pop_pw and pop_femme_enceinte
-        # iptp_q['target_pop'] = iptp_q['pop_femme_enceinte'] * settings.iptp_ANC_coverage
-        iptp_q["target_pop"] = iptp_q["pop_pw"] * settings.iptp_ANC_coverage
-        iptp_q["quant_sp_doses"] = (
-            iptp_q["target_pop"] * settings.iptp_doses_per_pw
-        ) * settings.iptp_buffer
-        iptp_q_long = iptp_q.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "target_pop",
-                "type_iptp",
-            ],
-            value_vars=["quant_sp_doses"],
-            var_name="unit",
-            value_name="quantity",
-        ).rename(columns={"type_iptp": "type_intervention"})
-        iptp_q_long["unit"] = "per SP"
-        iptp_q_long["code_intervention"] = "iptp"
-    else:
-        iptp_q_long = pd.DataFrame()
-
-    # --- SMC ---
-    # Assumptions are detailed in the R code comments
-    # 4 - doses per child
-    # 0.18 - proportion of children 3-11 months
-    # 0.77 - proportion of children 12-59 months
-    # 1.1 - buffer
-
-    if "code_smc" in scen_data.columns and scen_data["code_smc"].sum() > 0:
-        smc_monthly_rounds = settings.smc_monthly_rounds
-        smc_pop_prop_3_11 = settings.smc_pop_prop_3_11
-        smc_pop_prop_12_59 = settings.smc_pop_prop_12_59
-        smc_buffer = settings.smc_buffer  # smc_buffer
-        smc_coverage = settings.smc_coverage
-        include_5_10 = settings.smc_include_5_10
-
-        target_population.rename(columns={"annee": "year"})
-
-        smc_q = scen_data[scen_data["code_smc"] == 1].merge(
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'annee']
-            # TODO: commented out year as there is only 2025 population data for now in Nigeria
-            target_population,
-            left_on=["adm1", "adm2"],
-            right_on=["adm1", "adm2"],
-            suffixes=("", "_right"),
-        )
-        smc_q["quant_smc_spaq_3_11_months"] = (
-            (smc_q["pop_0_5"] * smc_pop_prop_3_11 * smc_coverage)
-            * smc_monthly_rounds
-            * smc_buffer
-        )
-        smc_q["quant_smc_spaq_12_59_months"] = (
-            (smc_q["pop_0_5"] * smc_pop_prop_12_59 * smc_coverage)
-            * smc_monthly_rounds
-            * smc_buffer
-        )
-        smc_q["quant_smc_spaq_5_10_years"] = (
-            (smc_q["pop_5_10"] * smc_coverage * smc_monthly_rounds * smc_buffer)
-            if include_5_10 and "pop_5_10" in smc_q.columns
-            else 0
-        )
-
-        pop_base = smc_q["pop_0_5"] * (smc_pop_prop_3_11 + smc_pop_prop_12_59)
-        pop_extended = (
-            (pop_base + smc_q["pop_5_10"])
-            if include_5_10 and "pop_5_10" in smc_q.columns
-            else pop_base
-        )
-        smc_q["target_pop"] = pop_extended * smc_coverage
-
-        smc_q_long = smc_q.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "target_pop",
-                "type_smc",
-            ],
-            value_vars=[c for c in smc_q.columns if c.startswith("quant_smc")],
-            var_name="unit",
-            value_name="quantity",
-        ).rename(columns={"type_smc": "type_intervention"})
-
-        unit_map = {
-            "quant_smc_spaq_3_11_months": "per SPAQ pack 3-11 month olds",
-            "quant_smc_spaq_12_59_months": "per SPAQ pack 12-59 month olds",
-            "quant_smc_spaq_5_10_years": "per SPAQ pack 12-59 month olds",  # Note: R code maps this to the same unit
-        }
-        smc_q_long["unit"] = smc_q_long["unit"].map(unit_map)
-        smc_q_long["code_intervention"] = "smc"
-    else:
-        smc_q_long = pd.DataFrame()
-
-    # --- PMC ---
-    # Assumptions detailed in R code comments
-    #     # 0.85 coverage
-    #     # 4 is number of rounds / child
-    #     # 0.75 underweight status for children
-    #     # 1.1 is buffer
-    #     # 2 is larger dose
-
-    pmc_df = scen_data[scen_data["code_pmc"] == 1].copy()
-
-    if not pmc_df.empty:
-        # Select relevant population columns
-        pop_cols_to_merge = ["adm1", "adm2", "year", "pop_0_1", "pop_1_2"]
-        target_pop_pmc = target_population.rename(columns={"annee": "year"})[
-            pop_cols_to_merge
-        ]
-
-        # Join with population data
-        # pmc_df = pd.merge(pmc_df, target_pop_pmc, on=['adm1', 'adm2', 'year'], how='left', suffixes=('', '_right'))
-        # TODO: update when more years are available
-        pmc_df = pd.merge(
-            pmc_df,
-            target_pop_pmc,
-            on=["adm1", "adm2"],
-            how="left",
-            suffixes=("", "_right"),
-        )
-
-        # Apply quantification formulas
-        pmc_df["quant_pmc_sp_0_1_years"] = (
-            pmc_df["pop_0_1"]
-            * settings.pmc_coverage
-            * settings.pmc_touchpoints  # Question: only for DRC? \
-            * settings.pmc_tablet_factor  # Question: only for DRC? \
-            * settings.pmc_buffer
-        )
-        pmc_df["quant_pmc_sp_1_2_years"] = (
-            pmc_df["pop_1_2"]
-            * settings.pmc_coverage
-            * settings.pmc_touchpoints
-            * 2  # 2 is for larger dose \
-            * settings.pmc_tablet_factor
-            * settings.pmc_buffer
-        )
-        pmc_df["quant_pmc_sp_total"] = (
-            pmc_df["quant_pmc_sp_0_1_years"] + pmc_df["quant_pmc_sp_1_2_years"]
-        )
-        pmc_df["quant_pmc_child"] = (
-            pmc_df["pop_0_1"] * settings.pmc_coverage
-            + pmc_df["pop_1_2"] * settings.pmc_coverage
-        )
-
-        # Set target population and intervention codes
-        pmc_df["target_pop"] = pmc_df["quant_pmc_child"]
-        pmc_df["code_intervention"] = "pmc"
-        pmc_df["type_intervention"] = pmc_df["type_pmc"]
-
-        # Reshape the data from wide to long format
-        pmc_quantification = pd.melt(
-            pmc_df,
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "code_intervention",
-                "type_intervention",
-                "target_pop",
-            ],
-            value_vars=["quant_pmc_sp_total", "quant_pmc_child"],
-            var_name="unit",
-            value_name="quantity",
-        )
-
-        # Clean up the 'unit' column
-        pmc_quantification["unit"] = pmc_quantification["unit"].str.replace(
-            "quant_pmc_", ""
-        )
-
-        # Map unit names to final display names
-        unit_map = {"sp_total": "per SP", "child": "per child"}
-        pmc_quantification["unit"] = pmc_quantification["unit"].map(unit_map)
-
-    else:
-        pmc_quantification = (
-            pd.DataFrame()
-        )  # Create empty dataframe if no PMC intervention
-
-    # --- Vaccine ---
-    # Assumptions: 84% coverage, 7% wastage, 4 doses per child
-
-    if "code_vacc" in scen_data.columns and scen_data["code_vacc"].sum() > 0:
-        vacc_q = scen_data[scen_data["code_vacc"] == 1].merge(
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'year']
-            # commented out year as there is only 2025 population data for now in Nigeria
-            # TODO: update when more years are available
-            # target_population, left_on=['adm1', 'adm2', 'year'], right_on=['adm1', 'adm2', 'year'], suffixes=('', '_right')
-            target_population,
-            left_on=["adm1", "adm2"],
-            right_on=["adm1", "adm2"],
-            suffixes=("", "_right"),
-        )
-        vacc_q["quant_child"] = (
-            vacc_q["pop_vaccine_5_36_months"] * settings.vacc_coverage
-        )
-        vacc_q["quant_doses"] = (
-            vacc_q["quant_child"]
-            * settings.vacc_doses_per_child
-            * settings.vacc_wastage_offset
-        )
-        vacc_q_long = vacc_q.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "type_vacc",
-            ],
-            value_vars=["quant_doses", "quant_child"],
-            var_name="unit",
-            value_name="quantity",
-        ).rename(columns={"type_vacc": "type_intervention"})
-        vacc_q_long["code_intervention"] = "vacc"
-        vacc_q_long = vacc_q_long.assign(
-            unit=lambda df: df["unit"].replace(
-                {"quant_doses": "per dose", "quant_child": "per child"}
-            )
-        )
-    else:
-        vacc_q_long = pd.DataFrame()
-
-    # --- CASE MANAGEMENT ---
-    try:
-        case_management_quantification = pd.read_csv(
-            "./nga-demo-data-pre-processed/cm-quant-data.csv"
-        )
-        case_management_quantification = case_management_quantification.assign(
-            scenario_name=scen_data["scenario_name"].iloc[0],
-            scenario_description=scen_data["scenario_description"].iloc[0],
-            year=scen_data["year"].iloc[
-                0
-            ],  # Assumes a single year in scen_data for this part
-            code_intervention="cm_public",
-        )
-        case_management_quantification = case_management_quantification.melt(
-            id_vars=[
-                "adm1",
-                "adm2",
-                "year",
-                "scenario_name",
-                "scenario_description",
-                "code_intervention",
-            ],
-            value_vars=[
-                col
-                for col in case_management_quantification.columns
-                if col.startswith("cm")
-            ],
-            var_name="unit",
-            value_name="quantity",
-        )
-        type_intervention_conditions = [
-            case_management_quantification["unit"] == "cm_rdt_kit_quantity",
-            case_management_quantification["unit"] == "cm_act_packs_quantity",
-            case_management_quantification["unit"] == "cm_iv_artesunate_quantity",
-            case_management_quantification["unit"] == "cm_ras_quantity",
-        ]
-        type_intervention_choices = ["RDT kits", "AL", "Artesunate injections", "RAS"]
-        case_management_quantification["type_intervention"] = np.select(
-            type_intervention_conditions, type_intervention_choices, default="Other"
-        )
-
-        unit_conditions = [
-            case_management_quantification["unit"] == "cm_rdt_kit_quantity",
-            case_management_quantification["unit"] == "cm_act_packs_quantity",
-            case_management_quantification["unit"] == "cm_iv_artesunate_quantity",
-            case_management_quantification["unit"] == "cm_ras_quantity",
-        ]
-        unit_choices = ["per RDT kit", "per AL", "per 60mg powder", "per RAS"]
-        case_management_quantification["unit"] = np.select(
-            unit_conditions, unit_choices, default="Other"
-        )
-
-        # Add target_pop as NA for this section
-        case_management_quantification["target_pop"] = np.nan
-
-    except FileNotFoundError:
-        print("Warning: Case management data file not found. Skipping this component.")
-        case_management_quantification = pd.DataFrame()
-
-    # --- Combine into one dataframe ---
-    budget = pd.concat(
-        [
-            itn_q_long,
-            itn_r_q_long,
-            iptp_q_long,
-            smc_q_long,
-            pmc_quantification,
-            vacc_q_long,
-            case_management_quantification,
-        ],
-        ignore_index=True,
-    )
-
-    # Join with cost data
-    budget = pd.merge(
-        budget,
-        cost_df,
-        on=["code_intervention", "type_intervention", "unit"],
-        how="left",
-    )
-    budget = budget.dropna(subset=["cost_class"])
-
-    # Melt cost columns to handle currencies
-    budget = budget.melt(
-        id_vars=[col for col in budget.columns if not col.endswith("_cost")],
-        value_vars=["usd_cost", "ngn_cost"],
-        var_name="currency",
-        value_name="unit_cost",
-    )
-
-    # Final calculations
-    budget = budget.assign(
-        cost_element=lambda df: df["quantity"] * df["unit_cost"],
-        currency=lambda df: df["currency"].replace(
-            {"usd_cost": "USD", "ngn_cost": "NGN"}
-        ),
-    )
-
-    # Create 'intervention_nice' column
-    conditions = [
-        budget["code_intervention"] == "cm_public",
-        budget["code_intervention"] == "cm_private",
-        budget["code_intervention"] == "iptp",
-        budget["code_intervention"] == "vacc",
-        budget["code_intervention"] == "itn_routine",
-        budget["code_intervention"] == "itn_campaign",
-        budget["code_intervention"] == "smc",
-        budget["code_intervention"] == "pmc",
-        # budget["code_intervention"] == "irs",
-        # budget["code_intervention"] == "lsm",
-    ]
-    choices = [
-        "Case Management Public",
-        "Case Management Private",
-        "IPTp",
-        "Vaccine",
-        "ITN Routine",
-        "ITN Campaign",
-        "SMC",
-        "PMC",
-        # "IRS",
-        # "LSM",
-    ]
-    budget["intervention_nice"] = np.select(
-        conditions, choices, default=budget["code_intervention"]
-    )
-
-    # print(budget)
-
-    return budget
+from .PATH_generate_budget import generate_budget
 
 
 def get_budget(
@@ -518,6 +9,8 @@ def get_budget(
     settings,
     cost_df,
     population_df,
+    currency="USD",
+    scenario="Test Scenario",
     cost_overrides=[],
 ):
     try:
@@ -531,8 +24,8 @@ def get_budget(
             country  # Add a new column 'adm0' and set its value to "Nigeria"
         )
         scen_data["year"] = year  # Set a default year for the scenario
-        scen_data["scenario_name"] = "Test Scenario"
-        scen_data["scenario_description"] = "test"
+        scen_data["scenario_name"] = scenario
+        scen_data["scenario_description"] = "description"
 
         def set_intervention_code(intervention_name, column_name):
             ########################################################################
@@ -547,9 +40,9 @@ def get_budget(
                 intervention[0].places if len(intervention) > 0 else []
             )
             scen_data[column_name] = scen_data.apply(
-                lambda row: 1
-                if (f"{row['adm1']}:{row['adm2']}" in intervention_places)
-                else 0,
+                lambda row: (
+                    1 if (f"{row['adm1']}:{row['adm2']}" in intervention_places) else 0
+                ),
                 axis=1,
             )
 
@@ -632,18 +125,21 @@ def get_budget(
             cost_df["usd_cost"] = cost_df["usd_cost_y"].combine_first(
                 cost_df["usd_cost"]
             )
+        # Normalize cost_df columns as required by generate_budget
+        if (
+            "local_currency_cost" not in cost_df.columns
+            and f"{currency.lower()}_cost" in cost_df.columns
+        ):
+            cost_df["local_currency_cost"] = cost_df[f"{currency.lower()}_cost"]
+        if (
+            "cost_year_for_analysis" not in cost_df.columns
+            and "cost_year" in cost_df.columns
+        ):
+            cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
 
-            # TODO: need a better way to support different country
-            if country == "NGA":
-                cost_df["ngn_cost"] = cost_df["ngn_cost_y"].combine_first(
-                    cost_df["ngn_cost"]
-                )
-            elif country == "CDF":  # DRC
-                cost_df["cdf_cost"] = cost_df["cdf_cost_y"].combine_first(
-                    cost_df["cdf_cost"]
-                )
-
-        budget = generate_budget(scen_data, cost_df, settings, population_df)
+        budget = generate_budget(
+            scen_data, cost_df, population_df, settings, "adm2", currency.upper()
+        )
 
         def get_cost_class_data(code, currency, year, cost_class):
             """
@@ -667,7 +163,6 @@ def get_budget(
         # Create the budget JSON structure
         # Create a DataFrame summarizing total costs for each intervention
         interventions = [
-            #   "cm_public", "iptp", "smc", "pmc", "vacc", "irs", "lsm", "itn_routine", "itn_campaign"
             "iptp",
             "smc",
             "pmc",
@@ -676,7 +171,11 @@ def get_budget(
             "itn_campaign",
         ]
 
-        intervention_costs = {"year": year, "interventions": [], "scenairo_name": ""}
+        intervention_costs = {
+            "year": year,
+            "interventions": [],
+            "scenario_name": scenario,
+        }
 
         for code, name in zip(interventions, interventions):
             costs = []
@@ -684,9 +183,7 @@ def get_budget(
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
-                cost_class_data = get_cost_class_data(
-                    code, settings.currency, year, cost_class
-                )
+                cost_class_data = get_cost_class_data(code, currency, year, cost_class)
                 if cost_class_data["cost"] > 0:
                     costs.append(
                         {
