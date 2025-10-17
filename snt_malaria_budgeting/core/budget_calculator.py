@@ -5,14 +5,12 @@ from .PATH_generate_budget import generate_budget
 
 
 def get_budget(
-    country: str,
     year: int,
     interventions_input: List[InterventionDetailModel],
     settings: Dict[str, Any],
     cost_df: pd.DataFrame,
     population_df: pd.DataFrame,
     currency: str = "USD",
-    scenario: str = "Test Scenario",
     cost_overrides: Optional[List[CostItems]] = None,
     spatial_planning_unit: Union[str, int] = "adm2",
 ) -> Dict[str, Any]:
@@ -26,12 +24,7 @@ def get_budget(
         # convert from json input to dataframe
         ######################################
         scen_data = pd.DataFrame(places, columns=[spatial_planning_unit])
-        scen_data["adm0"] = (
-            country  # Add a new column 'adm0' and set its value to "Nigeria"
-        )
         scen_data["year"] = year  # Set a default year for the scenario
-        scen_data["scenario_name"] = scenario
-        scen_data["scenario_description"] = "description"
 
         def set_intervention_code(intervention_name, column_name):
             ########################################################################
@@ -185,7 +178,6 @@ def get_budget(
         intervention_costs = {
             "year": year,
             "interventions": [],
-            "scenario_name": scenario,
         }
 
         for code, name in zip(interventions, interventions):

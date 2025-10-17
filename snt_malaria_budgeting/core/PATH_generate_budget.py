@@ -301,8 +301,6 @@ def generate_budget(
             currency=lambda x: x["currency"].map(
                 {"local_currency_cost": local_currency_symbol, "usd_cost": "USD"}
             ),
-            scenario_name=scen_data["scenario_name"].iloc[0],
-            scenario_description=scen_data["scenario_description"].iloc[0],
             quantity=1,
             cost_element=lambda x: x["unit_cost"] * x["quantity"],
         )
@@ -337,25 +335,9 @@ def generate_budget(
             "adjusted assumptions" if assumptions else "baseline assumptions"
         ),
     )
-    plan_id_base = (
-        budget["scenario_name"].fillna("")
-        # + " with "
-        # + budget["cost_name"].fillna("")
-        + " with "
-        + budget["assumption_type"].fillna("")
-    )
-    budget["plan_id"] = plan_id_base
-    adjusted_mask = budget["assumption_type"] == "adjusted assumptions"
-    budget.loc[adjusted_mask, "plan_id"] = (
-        plan_id_base[adjusted_mask] + f" ({assumption_summary})"
-    )
 
     final_cols = spu_cols + [
         "year",
-        # "scenario_name",
-        # "scenario_description",
-        # "cost_name",
-        # "cost_description",
         "code_intervention",
         "type_intervention",
         "target_pop",
@@ -368,6 +350,5 @@ def generate_budget(
         "intervention_nice",
         "assumptions_changes",
         "assumption_type",
-        "plan_id",
     ]
     return budget.reindex(columns=final_cols)

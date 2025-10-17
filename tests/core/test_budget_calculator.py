@@ -111,7 +111,6 @@ class TestGetBudget(unittest.TestCase):
         interventions = [InterventionDetailModel(name="iptp", type="SP", places=[1])]
 
         result = get_budget(
-            country="RDC",
             year=2025,
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
