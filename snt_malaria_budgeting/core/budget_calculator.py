@@ -1,6 +1,6 @@
 from typing import Dict, List, Any, Optional, Union
 import pandas as pd
-from ..models.models import InterventionDetailModel, CostItems
+from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
 
