@@ -214,8 +214,13 @@ class TestGenerateBudget(unittest.TestCase):
         """Helper method to run generate_budget with mocked file reads."""
         mock_read_excel.return_value = self.mock_population_data
         mock_read_csv.return_value = self.mock_cm_data
+
         return generate_budget(
-            self.scen_data, self.cost_data, self.mock_population_data, self.settings
+            scen_data=self.scen_data,
+            cost_data=self.cost_data,
+            target_population=self.mock_population_data,
+            assumptions=self.settings,
+            spatial_planning_unit="adm2",
         )
 
     def test_itn_campaign_quantification(self):
