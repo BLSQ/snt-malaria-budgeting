@@ -10,7 +10,7 @@ def get_budget(
     settings: Dict[str, Any],
     cost_df: pd.DataFrame,
     population_df: pd.DataFrame,
-    currency: str = "USD",
+    local_currency: str,
     cost_overrides: Optional[List[CostItems]] = None,
     spatial_planning_unit: Union[str, int] = "adm2",
 ) -> Dict[str, Any]:
@@ -127,9 +127,9 @@ def get_budget(
         # Normalize cost_df columns as required by generate_budget
         if (
             "local_currency_cost" not in cost_df.columns
-            and f"{currency.lower()}_cost" in cost_df.columns
+            and f"{local_currency.lower()}_cost" in cost_df.columns
         ):
-            cost_df["local_currency_cost"] = cost_df[f"{currency.lower()}_cost"]
+            cost_df["local_currency_cost"] = cost_df[f"{local_currency.lower()}_cost"]
         if (
             "cost_year_for_analysis" not in cost_df.columns
             and "cost_year" in cost_df.columns
@@ -142,7 +142,7 @@ def get_budget(
             target_population=population_df,
             assumptions=settings,
             spatial_planning_unit=spatial_planning_unit,
-            local_currency_symbol=currency.upper(),
+            local_currency_symbol=local_currency.upper(),
         )
 
         def get_cost_class_data(code, currency, year, cost_class):
@@ -186,7 +186,9 @@ def get_budget(
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
-                cost_class_data = get_cost_class_data(code, currency, year, cost_class)
+                cost_class_data = get_cost_class_data(
+                    code, local_currency, year, cost_class
+                )
                 if cost_class_data["cost"] > 0:
                     costs.append(
                         {
