@@ -4,11 +4,21 @@ A Python library for calculating malaria intervention budgets across different c
 
 ## Installation
 
-Install the package and its dependencies:
+Install from PyPI:
 
 ```bash
-pip install -r requirements.txt
+pip install snt-malaria-budgeting
 ```
+
+### Development Installation
+
+For development, clone the repository and install with development dependencies:
+
+```bash
+pip install -e .[dev]
+```
+
+This installs the package in editable mode along with all development tools (pytest, ruff, mypy, etc.).
 
 ## Example usage
 
@@ -50,11 +60,7 @@ print(budgets)
 
 ### Running Tests
 
-```bash
-pip install pytest pytest-cov
-```
-
-Run the test suite:
+After installing with development dependencies, run the test suite:
 
 ```bash
 pytest
@@ -65,3 +71,7 @@ pytest --cov=snt_malaria_budgeting --cov-report=html # with coverage report
 pytest tests/core/test_budget_calculator.py
 pytest tests/core/test_budget_calculator.py::TestBudgetCalculator::test_iptp_quantification
 ```
+
+## Acknowledgements
+
+This library is a Python port of the [PATH Budget Generation Function](https://github.com/PATH-Global-Health/budget-generation-function) (R implementation).
