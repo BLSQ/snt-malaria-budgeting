@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 import pandas as pd
 from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
@@ -11,8 +11,8 @@ def get_budget(
     cost_df: pd.DataFrame,
     population_df: pd.DataFrame,
     local_currency: str,
+    spatial_planning_unit: str,
     cost_overrides: Optional[List[CostItems]] = None,
-    spatial_planning_unit: Union[str, int] = "adm2",
 ) -> Dict[str, Any]:
     if cost_overrides is None:
         cost_overrides = []

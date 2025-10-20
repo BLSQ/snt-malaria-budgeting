@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, List, Union
+from typing import Dict, List
 
 
 def generate_budget(
@@ -7,7 +7,7 @@ def generate_budget(
     cost_data: pd.DataFrame,
     target_population: pd.DataFrame,
     assumptions: Dict[str, float],
-    spatial_planning_unit: Union[str, int],
+    spatial_planning_unit: str,
     local_currency_symbol: str = "NGN",
 ) -> pd.DataFrame:
     """
@@ -23,26 +23,17 @@ def generate_budget(
         cost_data: DataFrame of unit costs, from the 'Unit Cost template'.
         target_population: DataFrame with population data by SPU and year.
         assumptions: Dictionary of overrides for default parameters.
-        spatial_planning_unit: The spatial level ("adm1", "adm2", or "adm3").
+        spatial_planning_unit:
+            The identifier of the spatial planning unit, i.e. the join key to match
+            the scen_data on the target_population dataframes.
+            This can be a database ID, DHIS reference, combination of adm1 and adm2, etc.
         local_currency_symbol: Symbol for the local currency (e.g., "NGN").
 
     Returns:
         A long-format DataFrame containing the detailed budget.
     """
     # --- Environment & Inputs (Partner Guide: 4.1) ---
-    spu = spatial_planning_unit
-
-    if spu in ["adm1", "adm2", "adm3"]:
-        spu_cols = {
-            "adm1": ["adm1"],
-            "adm2": ["adm1", "adm2"],
-            "adm3": ["adm1", "adm2", "adm3"],
-        }[spu]
-        join_keys = spu_cols + ["year"]
-    else:
-        spu_cols = spu if isinstance(spu, list) else [spu]
-
-    join_keys = spu_cols + ["year"]
+    join_keys = [spatial_planning_unit] + ["year"]
 
     # --- Cost Data Prep (Partner Guide: 4.1) ---
     cost_data_clean = cost_data.dropna(subset=["local_currency_cost"]).copy()
@@ -336,7 +327,8 @@ def generate_budget(
         ),
     )
 
-    final_cols = spu_cols + [
+    final_cols = [
+        spatial_planning_unit,
         "year",
         "code_intervention",
         "type_intervention",
