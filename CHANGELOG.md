@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.2...v0.2.0) (2025-10-20)
+
+
+### Features
+
+* Allow the user to specify a spatial planning unit "key" ([e4384cb](https://github.com/BLSQ/snt-malaria-budgeting/commit/e4384cb7fb357ea2f1b64c8bc2ffa12718eb6141))
+
 ## [0.1.2](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.1...v0.1.2) (2025-10-02)
 
 
