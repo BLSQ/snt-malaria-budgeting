@@ -7,7 +7,7 @@ def generate_budget(
     cost_data: pd.DataFrame,
     target_population: pd.DataFrame,
     assumptions: Dict[str, float],
-    spatial_planning_unit: str = "adm2",
+    spatial_planning_unit: str,
     local_currency_symbol: str = "NGN",
 ) -> pd.DataFrame:
     """
@@ -23,24 +23,17 @@ def generate_budget(
         cost_data: DataFrame of unit costs, from the 'Unit Cost template'.
         target_population: DataFrame with population data by SPU and year.
         assumptions: Dictionary of overrides for default parameters.
-        spatial_planning_unit: The spatial level ("adm1", "adm2", or "adm3").
+        spatial_planning_unit:
+            The identifier of the spatial planning unit, i.e. the join key to match
+            the scen_data on the target_population dataframes.
+            This can be a database ID, DHIS reference, combination of adm1 and adm2, etc.
         local_currency_symbol: Symbol for the local currency (e.g., "NGN").
 
     Returns:
         A long-format DataFrame containing the detailed budget.
     """
     # --- Environment & Inputs (Partner Guide: 4.1) ---
-    spu = spatial_planning_unit
-    if spu not in ["adm1", "adm2", "adm3"]:
-        print(f"Warning: Unrecognized SPU = '{spu}'. Falling back to 'adm2'.")
-        spu = "adm2"
-
-    spu_cols = {
-        "adm1": ["adm1"],
-        "adm2": ["adm1", "adm2"],
-        "adm3": ["adm1", "adm2", "adm3"],
-    }[spu]
-    join_keys = spu_cols + ["year"]
+    join_keys = [spatial_planning_unit] + ["year"]
 
     # --- Cost Data Prep (Partner Guide: 4.1) ---
     cost_data_clean = cost_data.dropna(subset=["local_currency_cost"]).copy()
@@ -299,8 +292,6 @@ def generate_budget(
             currency=lambda x: x["currency"].map(
                 {"local_currency_cost": local_currency_symbol, "usd_cost": "USD"}
             ),
-            scenario_name=scen_data["scenario_name"].iloc[0],
-            scenario_description=scen_data["scenario_description"].iloc[0],
             quantity=1,
             cost_element=lambda x: x["unit_cost"] * x["quantity"],
         )
@@ -335,25 +326,10 @@ def generate_budget(
             "adjusted assumptions" if assumptions else "baseline assumptions"
         ),
     )
-    plan_id_base = (
-        budget["scenario_name"].fillna("")
-        + " with "
-        + budget["cost_name"].fillna("")
-        + " with "
-        + budget["assumption_type"].fillna("")
-    )
-    budget["plan_id"] = plan_id_base
-    adjusted_mask = budget["assumption_type"] == "adjusted assumptions"
-    budget.loc[adjusted_mask, "plan_id"] = (
-        plan_id_base[adjusted_mask] + f" ({assumption_summary})"
-    )
 
-    final_cols = spu_cols + [
+    final_cols = [
+        spatial_planning_unit,
         "year",
-        "scenario_name",
-        "scenario_description",
-        "cost_name",
-        "cost_description",
         "code_intervention",
         "type_intervention",
         "target_pop",
@@ -366,6 +342,5 @@ def generate_budget(
         "intervention_nice",
         "assumptions_changes",
         "assumption_type",
-        "plan_id",
     ]
     return budget.reindex(columns=final_cols)

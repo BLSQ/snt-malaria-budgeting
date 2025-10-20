@@ -5,7 +5,8 @@ A Python library for calculating malaria intervention budgets.
 """
 
 from .core.budget_calculator import generate_budget, get_budget
-from .models.models import (
+from .models import (
+    DEFAULT_COST_ASSUMPTIONS,
     InterventionDetailModel,
     InterventionCostModel,
     CostItems,
@@ -14,6 +15,7 @@ from .models.models import (
 __all__ = [
     "generate_budget",
     "get_budget",
+    "DEFAULT_COST_ASSUMPTIONS",
     "InterventionDetailModel",
     "InterventionCostModel",
     "CostItems",

@@ -1,31 +1,30 @@
+from typing import Dict, List, Any, Optional
 import pandas as pd
+from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
 
 def get_budget(
-    country,
-    year,
-    interventions_input,
-    settings,
-    cost_df,
-    population_df,
-    currency="USD",
-    scenario="Test Scenario",
-    cost_overrides=[],
-):
+    year: int,
+    interventions_input: List[InterventionDetailModel],
+    settings: Dict[str, Any],
+    cost_df: pd.DataFrame,
+    population_df: pd.DataFrame,
+    local_currency: str,
+    spatial_planning_unit: str,
+    cost_overrides: Optional[List[CostItems]] = None,
+) -> Dict[str, Any]:
+    if cost_overrides is None:
+        cost_overrides = []
+
     try:
-        places = population_df[["adm1", "adm2"]].drop_duplicates().values.tolist()
+        places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
 
         ######################################
         # convert from json input to dataframe
         ######################################
-        scen_data = pd.DataFrame(places, columns=["adm1", "adm2"])
-        scen_data["adm0"] = (
-            country  # Add a new column 'adm0' and set its value to "Nigeria"
-        )
+        scen_data = pd.DataFrame(places, columns=[spatial_planning_unit])
         scen_data["year"] = year  # Set a default year for the scenario
-        scen_data["scenario_name"] = scenario
-        scen_data["scenario_description"] = "description"
 
         def set_intervention_code(intervention_name, column_name):
             ########################################################################
@@ -41,7 +40,7 @@ def get_budget(
             )
             scen_data[column_name] = scen_data.apply(
                 lambda row: (
-                    1 if (f"{row['adm1']}:{row['adm2']}" in intervention_places) else 0
+                    1 if (row[spatial_planning_unit] in intervention_places) else 0
                 ),
                 axis=1,
             )
@@ -128,9 +127,9 @@ def get_budget(
         # Normalize cost_df columns as required by generate_budget
         if (
             "local_currency_cost" not in cost_df.columns
-            and f"{currency.lower()}_cost" in cost_df.columns
+            and f"{local_currency.lower()}_cost" in cost_df.columns
         ):
-            cost_df["local_currency_cost"] = cost_df[f"{currency.lower()}_cost"]
+            cost_df["local_currency_cost"] = cost_df[f"{local_currency.lower()}_cost"]
         if (
             "cost_year_for_analysis" not in cost_df.columns
             and "cost_year" in cost_df.columns
@@ -138,7 +137,12 @@ def get_budget(
             cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
 
         budget = generate_budget(
-            scen_data, cost_df, population_df, settings, "adm2", currency.upper()
+            scen_data=scen_data,
+            cost_data=cost_df,
+            target_population=population_df,
+            assumptions=settings,
+            spatial_planning_unit=spatial_planning_unit,
+            local_currency_symbol=local_currency.upper(),
         )
 
         def get_cost_class_data(code, currency, year, cost_class):
@@ -174,7 +178,6 @@ def get_budget(
         intervention_costs = {
             "year": year,
             "interventions": [],
-            "scenario_name": scenario,
         }
 
         for code, name in zip(interventions, interventions):
@@ -183,7 +186,9 @@ def get_budget(
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
-                cost_class_data = get_cost_class_data(code, currency, year, cost_class)
+                cost_class_data = get_cost_class_data(
+                    code, local_currency, year, cost_class
+                )
                 if cost_class_data["cost"] > 0:
                     costs.append(
                         {
