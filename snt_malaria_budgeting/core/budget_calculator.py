@@ -40,7 +40,9 @@ def get_budget(
             )
             scen_data[column_name] = scen_data.apply(
                 lambda row: (
-                    1 if (row[spatial_planning_unit] in intervention_places) else 0
+                    1 if (row[spatial_planning_unit] in intervention_places)
+                    else row[column_name] if column_name in row and pd.notnull(row[column_name])
+                    else None
                 ),
                 axis=1,
             )
@@ -54,8 +56,16 @@ def get_budget(
                 for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
-            scen_data[column_name] = (
-                intervention[0].type if len(intervention) > 0 else ""
+            intervention_places = (
+                intervention[0].places if len(intervention) > 0 else []
+            )
+            scen_data[column_name] = scen_data.apply(
+                lambda row: (
+                    intervention[0].type if (row[spatial_planning_unit] in intervention_places)
+                    else row[column_name] if column_name in row and pd.notnull(row[column_name])
+                    else None
+                ),
+                axis=1,
             )
 
         # for CM
@@ -86,13 +96,25 @@ def get_budget(
         scen_data["type_lsm"] = "Bti"
 
         # for ITN Routine
-        # Todo: for now, let's map that to IG2
-        set_intervention_code("ig2", "code_itn_routine")
-        set_intervention_type("ig2", "type_itn_routine")
+        set_intervention_code("aix2_r", "code_itn_routine")
+        set_intervention_type("aix2_r", "type_itn_routine")
+
+        set_intervention_code("pbo_r", "code_itn_routine")
+        set_intervention_type("pbo_r", "type_itn_routine")
+
+        set_intervention_code("pyr_r", "code_itn_routine")
+        set_intervention_type("pyr_r", "type_itn_routine")
+
 
         # for ITN Campaign
-        set_intervention_code("pyr", "code_itn_campaign")
-        set_intervention_type("pyr", "type_itn_campaign")
+        set_intervention_code("aix2_c", "code_itn_campaign")
+        set_intervention_type("aix2_c", "type_itn_campaign")
+
+        set_intervention_code("pbo_c", "code_itn_campaign")
+        set_intervention_type("pbo_c", "type_itn_campaign")
+
+        set_intervention_code("pyr_c", "code_itn_campaign")
+        set_intervention_type("pyr_c", "type_itn_campaign")
 
         # for ITN Urban
         scen_data["code_itn_urban"] = 0
