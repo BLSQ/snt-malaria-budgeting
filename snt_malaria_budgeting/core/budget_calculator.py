@@ -12,10 +12,14 @@ def get_budget(
     population_df: pd.DataFrame,
     local_currency: str,
     spatial_planning_unit: str,
+    budget_currency: str = "",
     cost_overrides: Optional[List[CostItems]] = None,
 ) -> Dict[str, Any]:
     if cost_overrides is None:
         cost_overrides = []
+    
+    if budget_currency is None:
+        budget_currency = local_currency
 
     try:
         places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
@@ -209,7 +213,7 @@ def get_budget(
             total_pop = 0
             for cost_class in cost_classes:
                 cost_class_data = get_cost_class_data(
-                    code, local_currency, year, cost_class
+                    code, budget_currency, year, cost_class
                 )
                 if cost_class_data["cost"] > 0:
                     costs.append(
