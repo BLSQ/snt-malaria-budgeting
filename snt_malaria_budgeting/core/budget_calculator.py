@@ -31,97 +31,71 @@ def get_budget(
         scen_data["year"] = year  # Set a default year for the scenario
 
         def set_intervention_code(intervention_name, column_name):
-            ########################################################################
-            # for setting intervention code base on intervention's places from input
-            ########################################################################
-            intervention = [
+            #################################################################################
+            # for setting intervention code and type base on intervention's places from input
+            #################################################################################
+            interventions = [
                 intervention
                 for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
-            intervention_places = (
-                intervention[0].places if len(intervention) > 0 else []
-            )
-            scen_data[column_name] = scen_data.apply(
-                lambda row: (
-                    1
-                    if (row[spatial_planning_unit] in intervention_places)
-                    else row[column_name]
-                    if column_name in row and pd.notnull(row[column_name])
-                    else None
-                ),
-                axis=1,
-            )
+            # to handle the case where no interventions are provided
+            if len(interventions) == 0:
+                scen_data[column_name] = None
+                scen_data[column_name.replace("code", "type")] = None
+                return
 
-        def set_intervention_type(intervention_name, column_name):
-            ################################################################
-            # for setting intervention type base on intervention from input
-            ################################################################
-            intervention = [
-                intervention
-                for intervention in interventions_input
-                if intervention.name == intervention_name
-            ]
-            intervention_places = (
-                intervention[0].places if len(intervention) > 0 else []
-            )
-            scen_data[column_name] = scen_data.apply(
-                lambda row: (
-                    intervention[0].type
-                    if (row[spatial_planning_unit] in intervention_places)
-                    else row[column_name]
-                    if column_name in row and pd.notnull(row[column_name])
-                    else None
-                ),
-                axis=1,
-            )
+            for intervention in interventions:
+                intervention_places = intervention.places
+                intervention_type = intervention.type
+                code_column = column_name
+                type_column = column_name.replace("code", "type")
+                # Update the intervention code column in scen_data DataFrame
+                scen_data[code_column] = scen_data.apply(
+                    lambda row: 1
+                    if row[spatial_planning_unit] in intervention_places
+                    else row[code_column]
+                    if code_column in row and pd.notnull(row[code_column])
+                    else None,
+                    axis=1,
+                )
+                # Update the intervention type column in scen_data DataFrame
+                scen_data[type_column] = scen_data.apply(
+                    lambda row: intervention_type
+                    if row[spatial_planning_unit] in intervention_places
+                    else row[type_column]
+                    if type_column in row and pd.notnull(row[type_column])
+                    else None,
+                    axis=1,
+                )
 
         # for CM
         set_intervention_code("cm", "code_cm_public")
 
         # for Iptp
         set_intervention_code("iptp", "code_iptp")
-        set_intervention_type("iptp", "type_iptp")
 
         # for SMC
         set_intervention_code("smc", "code_smc")
-        set_intervention_type("smc", "type_smc")
 
         # for PMC
         set_intervention_code("pmc", "code_pmc")
-        set_intervention_type("pmc", "type_pmc")
 
         # for Vaccination
         set_intervention_code("vacc", "code_vacc")
-        set_intervention_type("vacc", "type_vacc")
 
         # for IRS
         set_intervention_code("irsx1", "code_irs")
-        set_intervention_type("irsx1", "type_irs")
 
         # for LSM
         scen_data["code_lsm"] = 1  # Assuming a type for LSM
         scen_data["type_lsm"] = "Bti"
 
         # for ITN Routine
-        set_intervention_code("aix2_r", "code_itn_routine")
-        set_intervention_type("aix2_r", "type_itn_routine")
-
-        set_intervention_code("pbo_r", "code_itn_routine")
-        set_intervention_type("pbo_r", "type_itn_routine")
-
-        set_intervention_code("pyr_r", "code_itn_routine")
-        set_intervention_type("pyr_r", "type_itn_routine")
+        set_intervention_code("itn_routine", "code_itn_routine")
 
         # for ITN Campaign
-        set_intervention_code("aix2_c", "code_itn_campaign")
-        set_intervention_type("aix2_c", "type_itn_campaign")
-
-        set_intervention_code("pbo_c", "code_itn_campaign")
-        set_intervention_type("pbo_c", "type_itn_campaign")
-
-        set_intervention_code("pyr_c", "code_itn_campaign")
-        set_intervention_type("pyr_c", "type_itn_campaign")
+        set_intervention_code("itn_campaign", "code_itn_campaign")
 
         # for ITN Urban
         scen_data["code_itn_urban"] = 0
