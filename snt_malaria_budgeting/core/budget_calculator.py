@@ -17,7 +17,7 @@ def get_budget(
 ) -> Dict[str, Any]:
     if cost_overrides is None:
         cost_overrides = []
-    
+
     if budget_currency is None:
         budget_currency = local_currency
 
@@ -44,8 +44,10 @@ def get_budget(
             )
             scen_data[column_name] = scen_data.apply(
                 lambda row: (
-                    1 if (row[spatial_planning_unit] in intervention_places)
-                    else row[column_name] if column_name in row and pd.notnull(row[column_name])
+                    1
+                    if (row[spatial_planning_unit] in intervention_places)
+                    else row[column_name]
+                    if column_name in row and pd.notnull(row[column_name])
                     else None
                 ),
                 axis=1,
@@ -65,8 +67,10 @@ def get_budget(
             )
             scen_data[column_name] = scen_data.apply(
                 lambda row: (
-                    intervention[0].type if (row[spatial_planning_unit] in intervention_places)
-                    else row[column_name] if column_name in row and pd.notnull(row[column_name])
+                    intervention[0].type
+                    if (row[spatial_planning_unit] in intervention_places)
+                    else row[column_name]
+                    if column_name in row and pd.notnull(row[column_name])
                     else None
                 ),
                 axis=1,
@@ -108,7 +112,6 @@ def get_budget(
 
         set_intervention_code("pyr_r", "code_itn_routine")
         set_intervention_type("pyr_r", "type_itn_routine")
-
 
         # for ITN Campaign
         set_intervention_code("aix2_c", "code_itn_campaign")
