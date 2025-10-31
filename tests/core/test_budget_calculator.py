@@ -79,9 +79,7 @@ class TestGetBudget(unittest.TestCase):
 
     def test_get_budget_itn_routine(self):
         interventions = [
-            InterventionDetailModel(
-                name="itn_routine", type="PBO", places=[1]
-            ),
+            InterventionDetailModel(name="itn_routine", type="PBO", places=[1]),
             InterventionDetailModel(
                 name="itn_routine", type="Standard Pyrethroid", places=[2]
             ),
