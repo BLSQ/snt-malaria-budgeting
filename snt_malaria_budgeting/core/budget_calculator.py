@@ -3,6 +3,18 @@ import pandas as pd
 from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
+INTERVENTION_CATEGORIES = (
+    "itn_campaign",
+    "itn_routine",
+    "iptp",
+    "smc",
+    "pmc",
+    "vacc",
+    # Coming soon:
+    # "irs",
+    # "lsm",
+)
+
 
 def get_budget(
     year: int,
@@ -25,26 +37,27 @@ def get_budget(
         places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
 
         ######################################
-        # convert from json input to dataframe
+        # Convert from json input to dataframe
         ######################################
         scen_data = pd.DataFrame(places, columns=[spatial_planning_unit])
         scen_data["year"] = year  # Set a default year for the scenario
 
-        def set_intervention_code(intervention_name, column_name):
-            #################################################################################
-            # for setting intervention code and type base on intervention's places from input
-            #################################################################################
+        #################################################################################
+        # Set intervention code and type base on intervention's places from input for all
+        # available intervention categories.
+        #################################################################################
+        for category in INTERVENTION_CATEGORIES:
             interventions = [
                 intervention
                 for intervention in interventions_input
-                if intervention.name == intervention_name
+                if intervention.name == category
             ]
 
             for intervention in interventions:
                 intervention_places = intervention.places
                 intervention_type = intervention.type
-                code_column = column_name
-                type_column = column_name.replace("code", "type")
+                code_column = f"code_{category}"
+                type_column = f"type_{category}"
                 # Update the intervention code column in scen_data DataFrame
                 scen_data[code_column] = scen_data.apply(
                     lambda row: 1
@@ -63,40 +76,6 @@ def get_budget(
                     else None,
                     axis=1,
                 )
-
-        # for CM
-        set_intervention_code("cm", "code_cm_public")
-
-        # for Iptp
-        set_intervention_code("iptp", "code_iptp")
-
-        # for SMC
-        set_intervention_code("smc", "code_smc")
-
-        # for PMC
-        set_intervention_code("pmc", "code_pmc")
-
-        # for Vaccination
-        set_intervention_code("vacc", "code_vacc")
-
-        # for IRS
-        set_intervention_code("irsx1", "code_irs")
-
-        # for LSM
-        scen_data["code_lsm"] = 1  # Assuming a type for LSM
-        scen_data["type_lsm"] = "Bti"
-
-        # for ITN Routine
-        set_intervention_code("itn_routine", "code_itn_routine")
-
-        # for ITN Campaign
-        set_intervention_code("itn_campaign", "code_itn_campaign")
-
-        # for ITN Urban
-        scen_data["code_itn_urban"] = 0
-
-        # for CM private
-        scen_data["code_cm_private"] = 1
 
         ######################################
         # merge cost_df with cost_overrides
