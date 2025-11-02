@@ -66,16 +66,15 @@ class TestGetBudget(unittest.TestCase):
         iptp = next(i for i in result["interventions"] if i["name"] == "iptp")
 
         correct_target_pop = POP_PW
+        correct_iptp_cost = correct_target_pop * 0.8 * 3 * 1.1
 
         # formula: pop * coverage * doses * buffer
         self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
-        self.assertAlmostEqual(iptp["total_cost"], correct_target_pop * 0.8 * 3 * 1.1)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
         self.assertEqual(len(iptp["cost_breakdown"]), 1)
         self.assertEqual(iptp["cost_breakdown"][0]["name"], "iptp")
         self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            iptp["cost_breakdown"][0]["cost"], correct_target_pop * 0.8 * 3 * 1.1
-        )
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
 
     def test_get_budget_itn_routine(self):
         interventions = [
