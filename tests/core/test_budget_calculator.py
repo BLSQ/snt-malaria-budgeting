@@ -169,9 +169,16 @@ class TestGetBudget(unittest.TestCase):
             i for i in result["interventions"] if i["name"] == "itn_campaign"
         )
 
-        correct_target_pop = POP_TOTAL * 1.0
+        correct_target_pop = (
+            POP_TOTAL * DEFAULT_COST_ASSUMPTIONS["itn_campaign_coverage"]
+        )
 
-        correct_itn_campaign_cost = 3.49 * (POP_TOTAL / 1.8) * 1.0 * 1.1
+        correct_itn_campaign_cost = (
+            3.49
+            * (POP_TOTAL / DEFAULT_COST_ASSUMPTIONS["itn_campaign_divisor"])
+            * DEFAULT_COST_ASSUMPTIONS["itn_campaign_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["itn_campaign_buffer_mult"]
+        )
 
         # formula: (pop / divisor) * coverage * buffer * unit_cost
         # target_pop = pop * coverage (not divided by divisor)
@@ -221,10 +228,32 @@ class TestGetBudget(unittest.TestCase):
 
         # Each age group row in the budget has the full target_pop assigned
         # When summed across both age groups, this doubles the target_pop
-        correct_target_pop = POP_0_5 * (0.18 + 0.77) * 1.0 * 2
+        correct_target_pop = (
+            POP_0_5
+            * (
+                DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_3_11"]
+                + DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
+            )
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+            * 2
+        )
 
-        correct_smc_cost_3_11 = 0.30 * POP_0_5 * 0.18 * 1.0 * 4 * 1.1
-        correct_smc_cost_12_59 = 0.30 * POP_0_5 * 0.77 * 1.0 * 4 * 1.1
+        correct_smc_cost_3_11 = (
+            0.30
+            * POP_0_5
+            * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_3_11"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_monthly_rounds"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
+        )
+        correct_smc_cost_12_59 = (
+            0.30
+            * POP_0_5
+            * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_monthly_rounds"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
+        )
         correct_smc_cost = correct_smc_cost_3_11 + correct_smc_cost_12_59
 
         # formula: pop * pop_prop * coverage * monthly_rounds * buffer * unit_cost (for each age group)
@@ -269,12 +298,31 @@ class TestGetBudget(unittest.TestCase):
 
         pmc = next(i for i in result["interventions"] if i["name"] == "pmc")
 
-        correct_target_pop = POP_0_1 * 0.85 + POP_1_2 * 0.85
+        correct_target_pop = (
+            POP_0_1 * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
+            + POP_1_2 * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
+        )
 
         # sp_0_1 = pop_0_1 * coverage * touchpoints * 1 * tablet_factor * buffer
         # sp_1_2 = pop_1_2 * coverage * touchpoints * 2 * tablet_factor * buffer
-        sp_0_1 = 0.25 * POP_0_1 * 0.85 * 4 * 1 * 0.75 * 1.1
-        sp_1_2 = 0.25 * POP_1_2 * 0.85 * 4 * 2 * 0.75 * 1.1
+        sp_0_1 = (
+            0.25
+            * POP_0_1
+            * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["pmc_touchpoints"]
+            * 1
+            * DEFAULT_COST_ASSUMPTIONS["pmc_tablet_factor"]
+            * DEFAULT_COST_ASSUMPTIONS["pmc_buffer_mult"]
+        )
+        sp_1_2 = (
+            0.25
+            * POP_1_2
+            * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["pmc_touchpoints"]
+            * 2
+            * DEFAULT_COST_ASSUMPTIONS["pmc_tablet_factor"]
+            * DEFAULT_COST_ASSUMPTIONS["pmc_buffer_mult"]
+        )
         correct_pmc_cost = sp_0_1 + sp_1_2
 
         # target_pop = pop_0_1 * coverage + pop_1_2 * coverage
@@ -317,9 +365,17 @@ class TestGetBudget(unittest.TestCase):
 
         vacc = next(i for i in result["interventions"] if i["name"] == "vacc")
 
-        correct_target_pop = POP_VACCINE_5_36_MONTHS * 0.84
+        correct_target_pop = (
+            POP_VACCINE_5_36_MONTHS * DEFAULT_COST_ASSUMPTIONS["vacc_coverage"]
+        )
 
-        correct_vacc_cost = 3.00 * POP_VACCINE_5_36_MONTHS * 0.84 * 4 * 1.1
+        correct_vacc_cost = (
+            3.00
+            * POP_VACCINE_5_36_MONTHS
+            * DEFAULT_COST_ASSUMPTIONS["vacc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["vacc_doses_per_child"]
+            * DEFAULT_COST_ASSUMPTIONS["vacc_buffer_mult"]
+        )
 
         # formula: pop * coverage * doses_per_child * buffer * unit_cost
         # target_pop = pop * coverage
