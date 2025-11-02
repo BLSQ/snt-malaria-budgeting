@@ -39,11 +39,6 @@ def get_budget(
                 for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
-            # to handle the case where no interventions are provided
-            if len(interventions) == 0:
-                scen_data[column_name] = None
-                scen_data[column_name.replace("code", "type")] = None
-                return
 
             for intervention in interventions:
                 intervention_places = intervention.places
