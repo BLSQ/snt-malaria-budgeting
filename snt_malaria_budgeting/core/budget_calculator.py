@@ -12,10 +12,14 @@ def get_budget(
     population_df: pd.DataFrame,
     local_currency: str,
     spatial_planning_unit: str,
+    budget_currency: str = "",
     cost_overrides: Optional[List[CostItems]] = None,
 ) -> Dict[str, Any]:
     if cost_overrides is None:
         cost_overrides = []
+
+    if budget_currency is None:
+        budget_currency = local_currency
 
     try:
         places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
@@ -27,72 +31,71 @@ def get_budget(
         scen_data["year"] = year  # Set a default year for the scenario
 
         def set_intervention_code(intervention_name, column_name):
-            ########################################################################
-            # for setting intervention code base on intervention's places from input
-            ########################################################################
-            intervention = [
+            #################################################################################
+            # for setting intervention code and type base on intervention's places from input
+            #################################################################################
+            interventions = [
                 intervention
                 for intervention in interventions_input
                 if intervention.name == intervention_name
             ]
-            intervention_places = (
-                intervention[0].places if len(intervention) > 0 else []
-            )
-            scen_data[column_name] = scen_data.apply(
-                lambda row: (
-                    1 if (row[spatial_planning_unit] in intervention_places) else 0
-                ),
-                axis=1,
-            )
+            # to handle the case where no interventions are provided
+            if len(interventions) == 0:
+                scen_data[column_name] = None
+                scen_data[column_name.replace("code", "type")] = None
+                return
 
-        def set_intervention_type(intervention_name, column_name):
-            ################################################################
-            # for setting intervention type base on intervention from input
-            ################################################################
-            intervention = [
-                intervention
-                for intervention in interventions_input
-                if intervention.name == intervention_name
-            ]
-            scen_data[column_name] = (
-                intervention[0].type if len(intervention) > 0 else ""
-            )
+            for intervention in interventions:
+                intervention_places = intervention.places
+                intervention_type = intervention.type
+                code_column = column_name
+                type_column = column_name.replace("code", "type")
+                # Update the intervention code column in scen_data DataFrame
+                scen_data[code_column] = scen_data.apply(
+                    lambda row: 1
+                    if row[spatial_planning_unit] in intervention_places
+                    else row[code_column]
+                    if code_column in row and pd.notnull(row[code_column])
+                    else None,
+                    axis=1,
+                )
+                # Update the intervention type column in scen_data DataFrame
+                scen_data[type_column] = scen_data.apply(
+                    lambda row: intervention_type
+                    if row[spatial_planning_unit] in intervention_places
+                    else row[type_column]
+                    if type_column in row and pd.notnull(row[type_column])
+                    else None,
+                    axis=1,
+                )
 
         # for CM
         set_intervention_code("cm", "code_cm_public")
 
         # for Iptp
         set_intervention_code("iptp", "code_iptp")
-        set_intervention_type("iptp", "type_iptp")
 
         # for SMC
         set_intervention_code("smc", "code_smc")
-        set_intervention_type("smc", "type_smc")
 
         # for PMC
         set_intervention_code("pmc", "code_pmc")
-        set_intervention_type("pmc", "type_pmc")
 
         # for Vaccination
         set_intervention_code("vacc", "code_vacc")
-        set_intervention_type("vacc", "type_vacc")
 
         # for IRS
         set_intervention_code("irsx1", "code_irs")
-        set_intervention_type("irsx1", "type_irs")
 
         # for LSM
         scen_data["code_lsm"] = 1  # Assuming a type for LSM
         scen_data["type_lsm"] = "Bti"
 
         # for ITN Routine
-        # Todo: for now, let's map that to IG2
-        set_intervention_code("ig2", "code_itn_routine")
-        set_intervention_type("ig2", "type_itn_routine")
+        set_intervention_code("itn_routine", "code_itn_routine")
 
         # for ITN Campaign
-        set_intervention_code("pyr", "code_itn_campaign")
-        set_intervention_type("pyr", "type_itn_campaign")
+        set_intervention_code("itn_campaign", "code_itn_campaign")
 
         # for ITN Urban
         scen_data["code_itn_urban"] = 0
@@ -187,7 +190,7 @@ def get_budget(
             total_pop = 0
             for cost_class in cost_classes:
                 cost_class_data = get_cost_class_data(
-                    code, local_currency, year, cost_class
+                    code, budget_currency, year, cost_class
                 )
                 if cost_class_data["cost"] > 0:
                     costs.append(
