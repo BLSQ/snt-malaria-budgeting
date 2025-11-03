@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.2.0...v0.3.0) (2025-11-03)
+
+
+### Features
+
+* Setting different ITN types for ITN_campaign or ITN_routine ([d5d80bd](https://github.com/BLSQ/snt-malaria-budgeting/commit/d5d80bd55fe412e257dbf7ebf6f0aa58e2caf818))
+
 ## [0.2.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.1.2...v0.2.0) (2025-10-20)
 
 
