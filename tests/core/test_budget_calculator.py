@@ -175,13 +175,13 @@ class TestGetBudget(unittest.TestCase):
 
         correct_itn_campaign_cost = (
             3.49
-            * (POP_TOTAL / DEFAULT_COST_ASSUMPTIONS["itn_campaign_divisor"])
+            * POP_TOTAL
             * DEFAULT_COST_ASSUMPTIONS["itn_campaign_coverage"]
             * DEFAULT_COST_ASSUMPTIONS["itn_campaign_buffer_mult"]
+            / DEFAULT_COST_ASSUMPTIONS["itn_campaign_divisor"]
         )
 
-        # formula: (pop / divisor) * coverage * buffer * unit_cost
-        # target_pop = pop * coverage (not divided by divisor)
+        # formula: ((pop * coverage) / divisor) * buffer * unit_cost
         self.assertAlmostEqual(itn_campaign["total_pop"], correct_target_pop)
         self.assertAlmostEqual(itn_campaign["total_cost"], correct_itn_campaign_cost)
         self.assertEqual(len(itn_campaign["cost_breakdown"]), 1)
@@ -204,7 +204,7 @@ class TestGetBudget(unittest.TestCase):
                 ],
                 "cost_class": ["Commodity", "Commodity"],
                 "cost_year_for_analysis": [2025, 2025],
-                "usd_cost": [0.30, 0.30],
+                "usd_cost": [0.29, 0.35],
                 "local_currency_cost": [480.0, 480.0],
                 "cost_name": ["test", "test"],
             }
@@ -226,8 +226,10 @@ class TestGetBudget(unittest.TestCase):
 
         smc = next(i for i in result["interventions"] if i["name"] == "smc")
 
+        # TODO
         # Each age group row in the budget has the full target_pop assigned
-        # When summed across both age groups, this doubles the target_pop
+        # When summed across both age groups, this doubles the target_pop.
+        # Note: This is the behaviour of the budget script, but it doesn't feel right
         correct_target_pop = (
             POP_0_5
             * (
@@ -239,7 +241,7 @@ class TestGetBudget(unittest.TestCase):
         )
 
         correct_smc_cost_3_11 = (
-            0.30
+            0.29
             * POP_0_5
             * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_3_11"]
             * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
@@ -247,7 +249,7 @@ class TestGetBudget(unittest.TestCase):
             * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
         )
         correct_smc_cost_12_59 = (
-            0.30
+            0.35
             * POP_0_5
             * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
             * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
@@ -256,9 +258,10 @@ class TestGetBudget(unittest.TestCase):
         )
         correct_smc_cost = correct_smc_cost_3_11 + correct_smc_cost_12_59
 
-        # formula: pop * pop_prop * coverage * monthly_rounds * buffer * unit_cost (for each age group)
+        # formula: target_pop * pop_prop * coverage * monthly_rounds * buffer * unit_cost
+        # (for each age group)
         # target_pop = pop * (pop_prop_3_11 + pop_prop_12_59) * coverage
-        # Note: target_pop is duplicated across both age group rows, so total_pop is 2x
+        # TODO: target_pop is duplicated across both age group rows, so total_pop is 2x
         self.assertAlmostEqual(smc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(smc["total_cost"], correct_smc_cost)
         self.assertEqual(len(smc["cost_breakdown"]), 1)
@@ -310,7 +313,7 @@ class TestGetBudget(unittest.TestCase):
             * POP_0_1
             * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
             * DEFAULT_COST_ASSUMPTIONS["pmc_touchpoints"]
-            * 1
+            * 1  # 1 tablet per contact
             * DEFAULT_COST_ASSUMPTIONS["pmc_tablet_factor"]
             * DEFAULT_COST_ASSUMPTIONS["pmc_buffer_mult"]
         )
@@ -319,13 +322,14 @@ class TestGetBudget(unittest.TestCase):
             * POP_1_2
             * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
             * DEFAULT_COST_ASSUMPTIONS["pmc_touchpoints"]
-            * 2
+            * 2  # 2 tablets per contact
             * DEFAULT_COST_ASSUMPTIONS["pmc_tablet_factor"]
             * DEFAULT_COST_ASSUMPTIONS["pmc_buffer_mult"]
         )
         correct_pmc_cost = sp_0_1 + sp_1_2
 
-        # target_pop = pop_0_1 * coverage + pop_1_2 * coverage
+        # formula: (pop_0_1 * 1 tablet + pop_1_2 * 2 tablets)
+        #           * coverage * scaling factor * touch points * buffer
         self.assertAlmostEqual(pmc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(pmc["total_cost"], correct_pmc_cost)
         self.assertEqual(len(pmc["cost_breakdown"]), 1)
