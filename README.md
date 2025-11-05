@@ -69,7 +69,7 @@ pytest --cov=snt_malaria_budgeting --cov-report=html # with coverage report
 
 # specific test files or methods:
 pytest tests/core/test_budget_calculator.py
-pytest tests/core/test_budget_calculator.py::TestBudgetCalculator::test_iptp_quantification
+pytest tests/core/test_budget_calculator.py::TestGetBudget::test_get_budget_iptp
 ```
 
 ## Acknowledgements

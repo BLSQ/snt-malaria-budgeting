@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Union
 
 DEFAULT_COST_ASSUMPTIONS = {
-    "itn_campaign_divisor": 1.8,
+    "itn_campaign_divisor": 1.8,  # people per net
     "itn_campaign_bale_size": 50,
     "itn_campaign_buffer_mult": 1.1,
     "itn_campaign_coverage": 1.0,
