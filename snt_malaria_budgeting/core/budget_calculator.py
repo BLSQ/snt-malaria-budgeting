@@ -127,13 +127,13 @@ def get_budget(
             Helper function to get the total cost for a specific intervention, currency, year and cost class.
             """
             cost = budget[
-                (budget["code_intervention"] == code)
+                (budget["type_intervention"] == code)
                 & (budget["currency"] == currency.upper())
                 & (budget["year"] == year)
                 & (budget["cost_class"] == cost_class)
             ]["cost_element"].sum()
             pop = budget[
-                (budget["code_intervention"] == code)
+                (budget["type_intervention"] == code)
                 & (budget["currency"] == currency.upper())
                 & (budget["year"] == year)
                 & (budget["cost_class"] == cost_class)
@@ -141,44 +141,37 @@ def get_budget(
 
             return {"cost": cost, "pop": pop}
 
-        # Create the budget JSON structure
-        # Create a DataFrame summarizing total costs for each intervention
-        interventions = [
-            "iptp",
-            "smc",
-            "pmc",
-            "vacc",
-            "itn_routine",
-            "itn_campaign",
-        ]
-
         intervention_costs = {
             "year": year,
             "interventions": [],
         }
 
-        for code, name in zip(interventions, interventions):
+        intervention_types_and_names = [[i.type, i.name] for i in interventions_input]
+
+        # Create a dict summarizing the total costs per intervention _type_
+        for intervention_type, code in intervention_types_and_names:
             costs = []
             cost_classes = budget["cost_class"].unique()
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
                 cost_class_data = get_cost_class_data(
-                    code, budget_currency, year, cost_class
+                    intervention_type, budget_currency, year, cost_class
                 )
                 if cost_class_data["cost"] > 0:
                     costs.append(
                         {
-                            "name": name,
                             "cost_class": cost_class,
                             "cost": cost_class_data["cost"],
                         }
                     )
                 total_cost += cost_class_data["cost"]
                 total_pop += cost_class_data["pop"]
+
             intervention_costs["interventions"].append(
                 {
-                    "name": name,
+                    "type": intervention_type,
+                    "code": code,
                     "total_cost": total_cost,
                     "total_pop": total_pop,
                     "cost_breakdown": costs,

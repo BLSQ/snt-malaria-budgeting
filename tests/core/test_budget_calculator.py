@@ -63,7 +63,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        iptp = next(i for i in result["interventions"] if i["name"] == "iptp")
+        iptp = next(i for i in result["interventions"] if i["type"] == "SP")
 
         correct_target_pop = POP_PW
         correct_iptp_cost = correct_target_pop * 0.8 * 3 * 1.1
@@ -71,8 +71,9 @@ class TestGetBudget(unittest.TestCase):
         # formula: pop * coverage * doses * buffer
         self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
         self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
         self.assertEqual(len(iptp["cost_breakdown"]), 1)
-        self.assertEqual(iptp["cost_breakdown"][0]["name"], "iptp")
         self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
 
@@ -111,27 +112,40 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        itn_routine = next(
-            i for i in result["interventions"] if i["name"] == "itn_routine"
+        pbo_budget = next(i for i in result["interventions"] if i["type"] == "PBO")
+        pyr_budget = next(
+            i for i in result["interventions"] if i["type"] == "Standard Pyrethroid"
         )
 
-        correct_target_pop = (POP_PW + POP_0_5) * 3
-
-        correct_target_pbo_cost = 3.49 * (POP_PW + POP_0_5) * 0.3 * 1.1
-        correct_target_pyr_cost = 0.87 * (POP_PW * 2 + POP_0_5 * 2) * 0.3 * 1.1
+        correct_pbo_target_pop = POP_PW + POP_0_5
+        correct_target_pbo_cost = 3.49 * correct_pbo_target_pop * 0.3 * 1.1
 
         # formula: pop * coverage * doses * buffer
-        self.assertAlmostEqual(itn_routine["total_pop"], correct_target_pop)
+        self.assertAlmostEqual(pbo_budget["total_pop"], correct_pbo_target_pop)
+        self.assertAlmostEqual(pbo_budget["total_cost"], correct_target_pbo_cost)
+        self.assertEqual(pbo_budget["type"], "PBO")
+        self.assertEqual(pbo_budget["code"], "itn_routine")
+        self.assertEqual(len(pbo_budget["cost_breakdown"]), 1)
+        self.assertEqual(pbo_budget["cost_breakdown"][0]["cost_class"], "Procurement")
         self.assertAlmostEqual(
-            itn_routine["total_cost"], correct_target_pbo_cost + correct_target_pyr_cost
+            pbo_budget["cost_breakdown"][0]["cost"], correct_target_pbo_cost
         )
-        self.assertEqual(len(itn_routine["cost_breakdown"]), 1)
-        self.assertEqual(itn_routine["cost_breakdown"][0]["name"], "itn_routine")
-        self.assertEqual(itn_routine["cost_breakdown"][0]["cost_class"], "Procurement")
+
+        correct_pyr_target_pop = (POP_PW + POP_0_5) * 2
+        correct_target_pyr_cost = 0.87 * correct_pyr_target_pop * 0.3 * 1.1
+
+        self.assertAlmostEqual(pyr_budget["total_pop"], correct_pyr_target_pop)
+        self.assertAlmostEqual(pyr_budget["total_cost"], correct_target_pyr_cost)
+        self.assertEqual(pyr_budget["type"], "Standard Pyrethroid")
+        self.assertEqual(pyr_budget["code"], "itn_routine")
+        self.assertEqual(len(pyr_budget["cost_breakdown"]), 1)
+        self.assertEqual(pyr_budget["cost_breakdown"][0]["cost_class"], "Procurement")
         self.assertAlmostEqual(
-            itn_routine["cost_breakdown"][0]["cost"],
-            correct_target_pbo_cost + correct_target_pyr_cost,
+            pyr_budget["cost_breakdown"][0]["cost"], correct_target_pyr_cost
         )
+        from pprint import pprint
+
+        pprint(result)
 
     def test_get_budget_itn_campaign(self):
         interventions = [
@@ -165,9 +179,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        itn_campaign = next(
-            i for i in result["interventions"] if i["name"] == "itn_campaign"
-        )
+        itn_campaign = next(i for i in result["interventions"] if i["type"] == "PBO")
 
         correct_target_pop = (
             POP_TOTAL * DEFAULT_COST_ASSUMPTIONS["itn_campaign_coverage"]
@@ -184,8 +196,9 @@ class TestGetBudget(unittest.TestCase):
         # formula: ((pop * coverage) / divisor) * buffer * unit_cost
         self.assertAlmostEqual(itn_campaign["total_pop"], correct_target_pop)
         self.assertAlmostEqual(itn_campaign["total_cost"], correct_itn_campaign_cost)
+        self.assertEqual(itn_campaign["type"], "PBO")
+        self.assertEqual(itn_campaign["code"], "itn_campaign")
         self.assertEqual(len(itn_campaign["cost_breakdown"]), 1)
-        self.assertEqual(itn_campaign["cost_breakdown"][0]["name"], "itn_campaign")
         self.assertEqual(itn_campaign["cost_breakdown"][0]["cost_class"], "Procurement")
         self.assertAlmostEqual(
             itn_campaign["cost_breakdown"][0]["cost"], correct_itn_campaign_cost
@@ -224,7 +237,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        smc = next(i for i in result["interventions"] if i["name"] == "smc")
+        smc = next(i for i in result["interventions"] if i["type"] == "SP+AQ")
 
         # TODO
         # Each age group row in the budget has the full target_pop assigned
@@ -264,8 +277,9 @@ class TestGetBudget(unittest.TestCase):
         # TODO: target_pop is duplicated across both age group rows, so total_pop is 2x
         self.assertAlmostEqual(smc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(smc["total_cost"], correct_smc_cost)
+        self.assertEqual(smc["type"], "SP+AQ")
+        self.assertEqual(smc["code"], "smc")
         self.assertEqual(len(smc["cost_breakdown"]), 1)
-        self.assertEqual(smc["cost_breakdown"][0]["name"], "smc")
         self.assertEqual(smc["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(smc["cost_breakdown"][0]["cost"], correct_smc_cost)
 
@@ -299,7 +313,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        pmc = next(i for i in result["interventions"] if i["name"] == "pmc")
+        pmc = next(i for i in result["interventions"] if i["type"] == "SP")
 
         correct_target_pop = (
             POP_0_1 * DEFAULT_COST_ASSUMPTIONS["pmc_coverage"]
@@ -332,8 +346,9 @@ class TestGetBudget(unittest.TestCase):
         #           * coverage * scaling factor * touch points * buffer
         self.assertAlmostEqual(pmc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(pmc["total_cost"], correct_pmc_cost)
+        self.assertEqual(pmc["type"], "SP")
+        self.assertEqual(pmc["code"], "pmc")
         self.assertEqual(len(pmc["cost_breakdown"]), 1)
-        self.assertEqual(pmc["cost_breakdown"][0]["name"], "pmc")
         self.assertEqual(pmc["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(pmc["cost_breakdown"][0]["cost"], correct_pmc_cost)
 
@@ -367,7 +382,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertIn("year", result.keys())
         self.assertIn("interventions", result.keys())
 
-        vacc = next(i for i in result["interventions"] if i["name"] == "vacc")
+        vacc = next(i for i in result["interventions"] if i["type"] == "R21")
 
         correct_target_pop = (
             POP_VACCINE_5_36_MONTHS * DEFAULT_COST_ASSUMPTIONS["vacc_coverage"]
@@ -385,7 +400,8 @@ class TestGetBudget(unittest.TestCase):
         # target_pop = pop * coverage
         self.assertAlmostEqual(vacc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(vacc["total_cost"], correct_vacc_cost)
+        self.assertEqual(vacc["type"], "R21")
+        self.assertEqual(vacc["code"], "vacc")
         self.assertEqual(len(vacc["cost_breakdown"]), 1)
-        self.assertEqual(vacc["cost_breakdown"][0]["name"], "vacc")
         self.assertEqual(vacc["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(vacc["cost_breakdown"][0]["cost"], correct_vacc_cost)
