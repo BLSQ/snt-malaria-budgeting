@@ -3,7 +3,7 @@ import pandas as pd
 from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
-INTERVENTION_CATEGORIES = (
+INTERVENTION_BUDGET_CODES = (
     "itn_campaign",
     "itn_routine",
     "iptp",
@@ -46,18 +46,18 @@ def get_budget(
         # Set intervention code and type base on intervention's places from input for all
         # available intervention categories.
         #################################################################################
-        for category in INTERVENTION_CATEGORIES:
+        for budget_code in INTERVENTION_BUDGET_CODES:
             interventions = [
                 intervention
                 for intervention in interventions_input
-                if intervention.name == category
+                if intervention.code == budget_code
             ]
 
             for intervention in interventions:
                 intervention_places = intervention.places
                 intervention_type = intervention.type
-                code_column = f"code_{category}"
-                type_column = f"type_{category}"
+                code_column = f"code_{budget_code}"
+                type_column = f"type_{budget_code}"
                 # Update the intervention code column in scen_data DataFrame
                 scen_data[code_column] = scen_data.apply(
                     lambda row: 1
@@ -146,10 +146,10 @@ def get_budget(
             "interventions": [],
         }
 
-        intervention_types_and_names = [[i.type, i.name] for i in interventions_input]
+        intervention_types_and_codes = [[i.type, i.code] for i in interventions_input]
 
         # Create a dict summarizing the total costs per intervention _type_
-        for intervention_type, code in intervention_types_and_names:
+        for intervention_type, code in intervention_types_and_codes:
             costs = []
             cost_classes = budget["cost_class"].unique()
             total_cost = 0

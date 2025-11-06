@@ -33,7 +33,7 @@ from snt_malaria_budgeting.models import (
 
 start_year = 2025
 end_year = 2027
-interventions = [InterventionDetailModel(name="iptp", type="SP", places=[1])]
+interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1])]
 settings = DEFAULT_COST_ASSUMPTIONS
 
 budgets = []

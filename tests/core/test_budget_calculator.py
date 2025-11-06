@@ -35,7 +35,7 @@ class TestGetBudget(unittest.TestCase):
         )
 
     def test_get_budget_iptp(self):
-        interventions = [InterventionDetailModel(name="iptp", type="SP", places=[1])]
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1])]
         cost_df = pd.DataFrame(
             {
                 "code_intervention": ["iptp"],
@@ -79,9 +79,9 @@ class TestGetBudget(unittest.TestCase):
 
     def test_get_budget_itn_routine(self):
         interventions = [
-            InterventionDetailModel(name="itn_routine", type="PBO", places=[1]),
+            InterventionDetailModel(code="itn_routine", type="PBO", places=[1]),
             InterventionDetailModel(
-                name="itn_routine", type="Standard Pyrethroid", places=[2]
+                code="itn_routine", type="Standard Pyrethroid", places=[2]
             ),
         ]
 
@@ -143,13 +143,10 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(
             pyr_budget["cost_breakdown"][0]["cost"], correct_target_pyr_cost
         )
-        from pprint import pprint
-
-        pprint(result)
 
     def test_get_budget_itn_campaign(self):
         interventions = [
-            InterventionDetailModel(name="itn_campaign", type="PBO", places=[1])
+            InterventionDetailModel(code="itn_campaign", type="PBO", places=[1])
         ]
 
         cost_df = pd.DataFrame(
@@ -205,7 +202,7 @@ class TestGetBudget(unittest.TestCase):
         )
 
     def test_get_budget_smc(self):
-        interventions = [InterventionDetailModel(name="smc", type="SP+AQ", places=[1])]
+        interventions = [InterventionDetailModel(code="smc", type="SP+AQ", places=[1])]
 
         cost_df = pd.DataFrame(
             {
@@ -284,7 +281,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(smc["cost_breakdown"][0]["cost"], correct_smc_cost)
 
     def test_get_budget_pmc(self):
-        interventions = [InterventionDetailModel(name="pmc", type="SP", places=[1])]
+        interventions = [InterventionDetailModel(code="pmc", type="SP", places=[1])]
 
         cost_df = pd.DataFrame(
             {
@@ -353,7 +350,7 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(pmc["cost_breakdown"][0]["cost"], correct_pmc_cost)
 
     def test_get_budget_vacc(self):
-        interventions = [InterventionDetailModel(name="vacc", type="R21", places=[1])]
+        interventions = [InterventionDetailModel(code="vacc", type="R21", places=[1])]
 
         cost_df = pd.DataFrame(
             {
