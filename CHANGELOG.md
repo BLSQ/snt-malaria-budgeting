@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.3.0...v0.4.0) (2025-11-07)
+
+
+### Features
+
+* Return intervention costs grouped per type instead of code ([f3200c9](https://github.com/BLSQ/snt-malaria-budgeting/commit/f3200c95b8bf9ff1d468283c6ec64dbd1e01482b))
+* Return intervention costs grouped per type instead of code ([1da15dd](https://github.com/BLSQ/snt-malaria-budgeting/commit/1da15ddf2385c1c541a860d2d59156a95a2ce80d))
+
 ## [0.3.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.2.0...v0.3.0) (2025-11-03)
 
 
