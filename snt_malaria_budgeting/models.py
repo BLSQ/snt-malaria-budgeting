@@ -34,8 +34,8 @@ DEFAULT_COST_ASSUMPTIONS = {
 
 
 class InterventionDetailModel(BaseModel):
-    name: str
     type: str
+    code: str
     places: List[Union[str, int]]
 
 
