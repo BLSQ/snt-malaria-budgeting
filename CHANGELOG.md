@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.4.0...v0.4.1) (2025-11-12)
+
+
+### Bug Fixes
+
+* Check for empty string on budget currency and use default ([#14](https://github.com/BLSQ/snt-malaria-budgeting/issues/14)) ([149ee19](https://github.com/BLSQ/snt-malaria-budgeting/commit/149ee19479db914640db10997ea915751b9f927c))
+
 ## [0.4.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.3.0...v0.4.0) (2025-11-07)
 
 
