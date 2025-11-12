@@ -30,7 +30,7 @@ def get_budget(
     if cost_overrides is None:
         cost_overrides = []
 
-    if budget_currency is None:
+    if not budget_currency:
         budget_currency = local_currency
 
     try:
@@ -122,18 +122,18 @@ def get_budget(
             local_currency_symbol=local_currency.upper(),
         )
 
-        def get_cost_class_data(code, currency, year, cost_class):
+        def get_cost_class_data(intervention_type, currency, year, cost_class):
             """
             Helper function to get the total cost for a specific intervention, currency, year and cost class.
             """
             cost = budget[
-                (budget["type_intervention"] == code)
+                (budget["type_intervention"] == intervention_type)
                 & (budget["currency"] == currency.upper())
                 & (budget["year"] == year)
                 & (budget["cost_class"] == cost_class)
             ]["cost_element"].sum()
             pop = budget[
-                (budget["type_intervention"] == code)
+                (budget["type_intervention"] == intervention_type)
                 & (budget["currency"] == currency.upper())
                 & (budget["year"] == year)
                 & (budget["cost_class"] == cost_class)

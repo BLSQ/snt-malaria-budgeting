@@ -34,6 +34,48 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
+    def test_get_budget_use_default_currency(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1])]
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": 2025,
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        result = get_budget(
+            year=2025,
+            interventions_input=interventions,
+            settings=DEFAULT_COST_ASSUMPTIONS,
+            cost_df=cost_df,
+            population_df=self.population_df,
+            spatial_planning_unit="key",
+            local_currency="ngn",
+        )
+
+        self.assertIn("year", result.keys())
+        self.assertIn("interventions", result.keys())
+
+        iptp = next(i for i in result["interventions"] if i["type"] == "SP")
+
+        correct_target_pop = POP_PW
+        correct_iptp_cost = correct_target_pop * 0.8 * 3 * 1.1
+
+        # formula: pop * coverage * doses * buffer
+        self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
+        self.assertEqual(len(iptp["cost_breakdown"]), 1)
+        self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
+
     def test_get_budget_iptp(self):
         interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1])]
         cost_df = pd.DataFrame(
