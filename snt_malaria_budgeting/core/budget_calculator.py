@@ -30,9 +30,7 @@ def get_budget(
     if cost_overrides is None:
         cost_overrides = []
 
-    if budget_currency is None or (
-        isinstance(budget_currency, str) and budget_currency.strip() == ""
-    ):
+    if not budget_currency:
         budget_currency = local_currency
 
     try:
