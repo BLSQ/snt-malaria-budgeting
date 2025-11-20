@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 
-from snt_malaria_budgeting.core.budget_calculator import get_budget
+from snt_malaria_budgeting.core.budget_calculator import BudgetCalculator, get_budget
 from snt_malaria_budgeting.models import (
     DEFAULT_COST_ASSUMPTIONS,
     InterventionDetailModel,
@@ -20,14 +20,16 @@ class TestGetBudget(unittest.TestCase):
     def setUpClass(cls):
         cls.population_df = pd.DataFrame(
             {
-                "key": [1001, 1002],
-                "year": [2025, 2025],
-                "pop_total": [POP_TOTAL, POP_TOTAL * 2],
-                "pop_pw": [POP_PW, POP_PW * 2],
-                "pop_0_5": [POP_0_5, POP_0_5 * 2],
-                "pop_0_1": [POP_0_1, POP_0_1 * 2],
-                "pop_1_2": [POP_1_2, POP_1_2 * 2],
+                "key": [1001, 1002, 1001, 1002],
+                "year": [2025, 2025, 2026, 2026],
+                "pop_total": [POP_TOTAL, POP_TOTAL * 2, POP_TOTAL, POP_TOTAL * 2],
+                "pop_pw": [POP_PW, POP_PW * 2, POP_PW, POP_PW * 2],
+                "pop_0_5": [POP_0_5, POP_0_5 * 2, POP_0_5, POP_0_5 * 2],
+                "pop_0_1": [POP_0_1, POP_0_1 * 2, POP_0_1, POP_0_1 * 2],
+                "pop_1_2": [POP_1_2, POP_1_2 * 2, POP_1_2, POP_1_2 * 2],
                 "pop_vaccine_5_36_months": [
+                    POP_VACCINE_5_36_MONTHS,
+                    POP_VACCINE_5_36_MONTHS * 2,
                     POP_VACCINE_5_36_MONTHS,
                     POP_VACCINE_5_36_MONTHS * 2,
                 ],
@@ -38,26 +40,28 @@ class TestGetBudget(unittest.TestCase):
         interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
         cost_df = pd.DataFrame(
             {
-                "code_intervention": ["iptp"],
-                "type_intervention": ["SP"],
-                "unit": ["per SP"],
-                "cost_class": ["Commodity"],
-                "cost_year_for_analysis": 2025,
-                "usd_cost": [0.50558094],
-                "local_currency_cost": [1],
-                "cost_name": ["test"],
+                "code_intervention": ["iptp", "iptp"],
+                "type_intervention": ["SP", "SP"],
+                "unit": ["per SP", "per SP"],
+                "cost_class": ["Commodity", "Commodity"],
+                "cost_year_for_analysis": [2025, 2026],
+                "usd_cost": [0.50558094, 0.6069094],
+                "local_currency_cost": [1, 1],
+                "cost_name": ["test", "test"],
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
-            interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
-            cost_df=cost_df,
-            population_df=self.population_df,
-            spatial_planning_unit="key",
+        budget_calculator = BudgetCalculator(
+            interventions,
+            DEFAULT_COST_ASSUMPTIONS,
+            cost_df,
+            self.population_df,
             local_currency="ngn",
+            spatial_planning_unit="key",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -102,16 +106,17 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
-            budget_currency="ngn",
+            spatial_planning_unit="key",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -162,16 +167,17 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -230,16 +236,18 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -301,16 +309,18 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -388,16 +398,18 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -468,16 +480,18 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -540,16 +554,18 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
-        interventions_costs, places_costs = get_budget(
-            year=2025,
+        budget_calculator = BudgetCalculator(
             interventions_input=interventions,
             settings=DEFAULT_COST_ASSUMPTIONS,
             cost_df=cost_df,
             population_df=self.population_df,
-            spatial_planning_unit="key",
             local_currency="ngn",
+            spatial_planning_unit="key",
             budget_currency="usd",
         )
+
+        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
