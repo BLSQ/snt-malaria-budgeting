@@ -410,38 +410,7 @@ def get_budget(
                 }
             )
 
-        # Create a dict summarizing total costs per place
-        place_costs = {}
-        for place in places:
-            place_budget = budget[budget[spatial_planning_unit] == place]
-
-            total_place_cost = place_budget[
-                (place_budget["currency"] == budget_currency.upper())
-                & (place_budget["year"] == year)
-            ]["cost_element"].sum()
-
-            place_interventions = []
-            for intervention_type, code in intervention_types_and_codes:
-                intervention_cost = place_budget[
-                    (place_budget["type_intervention"] == intervention_type)
-                    & (place_budget["currency"] == budget_currency.upper())
-                    & (place_budget["year"] == year)
-                ]["cost_element"].sum()
-                if intervention_cost > 0:
-                    place_interventions.append(
-                        {
-                            "type": intervention_type,
-                            "code": code,
-                            "cost": intervention_cost,
-                        }
-                    )
-
-            place_costs[place] = {
-                "total_cost": total_place_cost,
-                "interventions": place_interventions,
-            }
-
-        return intervention_costs, place_costs
+        return intervention_costs
     except Exception as e:
         print(f"Error generating budget: {e}")
         raise e
