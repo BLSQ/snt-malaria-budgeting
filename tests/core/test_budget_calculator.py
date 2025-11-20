@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 
-from snt_malaria_budgeting.core.budget_calculator import BudgetCalculator, get_budget
+from snt_malaria_budgeting.core.budget_calculator import BudgetCalculator
 from snt_malaria_budgeting.models import (
     DEFAULT_COST_ASSUMPTIONS,
     InterventionDetailModel,
