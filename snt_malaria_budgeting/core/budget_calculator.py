@@ -69,12 +69,9 @@ class BudgetCalculator:
 
         return budget
 
-    def get_intervention_costs(self, year):
+    def get_interventions_costs(self, year):
         budget = self.calculate_budget(year)
-        intervention_costs = {
-            "year": year,
-            "interventions": [],
-        }
+        interventions_costs = []
         # Create a dict summarizing the total costs per intervention _type_
         for intervention_type, code in self.intervention_types_and_codes:
             costs = []
@@ -95,7 +92,7 @@ class BudgetCalculator:
                 total_cost += cost_class_data["cost"]
                 total_pop += cost_class_data["pop"]
 
-            intervention_costs["interventions"].append(
+            interventions_costs.append(
                 {
                     "type": intervention_type,
                     "code": code,
@@ -104,12 +101,12 @@ class BudgetCalculator:
                     "cost_breakdown": costs,
                 }
             )
-        return intervention_costs
+        return interventions_costs
 
     def get_places_costs(self, year):
         budget = self.calculate_budget(year)
 
-        place_costs = {}
+        place_costs = []
         for place in self.places:
             place_budget = budget[budget[self.spatial_planning_unit] == place]
 
@@ -128,14 +125,17 @@ class BudgetCalculator:
                         {
                             "type": intervention_type,
                             "code": code,
-                            "cost": intervention_cost,
+                            "total_cost": intervention_cost,
                         }
                     )
 
-            place_costs[place] = {
-                "total_cost": total_place_cost,
-                "interventions": place_interventions,
-            }
+            place_costs.append(
+                {
+                    "place": place,
+                    "total_cost": total_place_cost,
+                    "interventions": place_interventions,
+                }
+            )
         return place_costs
 
     def _get_scenario_data(
