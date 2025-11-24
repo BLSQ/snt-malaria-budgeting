@@ -60,7 +60,7 @@ class TestGetBudget(unittest.TestCase):
             spatial_planning_unit="key",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -115,7 +115,7 @@ class TestGetBudget(unittest.TestCase):
             spatial_planning_unit="key",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -177,7 +177,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
         self.assertIn("interventions", interventions_costs.keys())
@@ -246,7 +246,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -319,7 +319,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -408,7 +408,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -490,7 +490,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
@@ -564,7 +564,7 @@ class TestGetBudget(unittest.TestCase):
             budget_currency="usd",
         )
 
-        interventions_costs = budget_calculator.get_intervention_costs(2025)
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
         self.assertIn("year", interventions_costs.keys())
