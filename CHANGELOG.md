@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.4.1...v0.4.2) (2025-11-24)
+
+
+### Bug Fixes
+
+* Small readme update ([#18](https://github.com/BLSQ/snt-malaria-budgeting/issues/18)) ([3e87468](https://github.com/BLSQ/snt-malaria-budgeting/commit/3e874683c6031aec250d86232a2afd05e49538ec))
+
 ## [0.4.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.4.0...v0.4.1) (2025-11-12)
 
 
