@@ -37,23 +37,29 @@ interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1])]
 settings = DEFAULT_COST_ASSUMPTIONS
 
 budgets = []
+budget_calculator = BudgetCalculator(
+    interventions_input=interventions_input,
+    settings=settings,
+    cost_df=cost_df, # refer to unit tests for an example
+    population_df=population_df, # refer to unit tests for an example
+    local_currency="EUR",
+    spatial_planning_unit="key",
+    cost_overrides=[], # optional
+
+)
 
 for year in range(start_year, end_year + 1):
     print(f"Fetching budget for year: {year}")
-    budgets.append(
-        get_budget(
-            year=year,
-            interventions_input=interventions,
-            settings=settings,
-            cost_df=cost_df, # refer to unit tests for an example
-            population_df=population_df, # refer to unit tests for an example
-            spatial_planning_unit="key",
-            local_currency="EUR",
-            cost_overrides=[], # optional
-        )
-    )
+    interventions_costs = budget_calculator.get_interventions_costs(year)
+    places_costs = budget_calculator.get_places_costs(year)
+    budgets.append({
+        "year": year,
+        "interventions": interventions_costs,
+        "org_units_costs": places_costs
+    })
 
 print(budgets)
+
 ```
 
 ## Development
