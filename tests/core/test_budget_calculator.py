@@ -304,10 +304,6 @@ class TestGetBudget(unittest.TestCase):
 
         smc = next(i for i in interventions_costs if i["type"] == "SP+AQ")
 
-        # TODO
-        # Each age group row in the budget has the full target_pop assigned
-        # When summed across both age groups, this doubles the target_pop.
-        # Note: This is the behaviour of the budget script, but it doesn't feel right
         correct_target_pop = (
             POP_0_5
             * (
@@ -315,7 +311,6 @@ class TestGetBudget(unittest.TestCase):
                 + DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
             )
             * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
-            * 2
         )
 
         correct_smc_cost_3_11 = (
@@ -573,7 +568,6 @@ class TestGetBudget(unittest.TestCase):
                 + DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
             )
             * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
-            * 2
         ) * 2  # Doubled for location 1002
 
         correct_smc_cost_3_11 = (
@@ -634,3 +628,124 @@ class TestGetBudget(unittest.TestCase):
         self.assertEqual(place_smc["type"], "SP+AQ")
         self.assertEqual(place_smc["code"], "smc")
         self.assertAlmostEqual(place_smc["total_cost"], correct_smc_cost)
+
+    def test_budget_itn(self):
+        interventions = [
+            InterventionDetailModel(
+                code="itn_routine", type="Dual AI", places=[1001, 1002]
+            ),
+            InterventionDetailModel(code="itn_campaign", type="Dual AI", places=[1001]),
+        ]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": [
+                    "itn_routine",
+                    "itn_routine",
+                    "itn_campaign",
+                    "itn_campaign",
+                ],
+                "type_intervention": [
+                    "Dual AI",
+                    "Dual AI",
+                    "Dual AI",
+                    "Dual AI",
+                ],
+                "unit": ["per ITN", "per ITN", "per ITN", "per bale"],
+                "cost_class": [
+                    "Procurement",
+                    "Distribution",
+                    "Procurement",
+                    "Distribution",
+                ],
+                "cost_year_for_analysis": [2025, 2025, 2025, 2025],
+                "usd_cost": [3.49, 0.36, 3.49, 6.25],
+                "local_currency_cost": [1, 1, 1, 1],
+                "cost_name": [
+                    "Dual AI - routine - procurement",
+                    "Dual AI - routine - distribution",
+                    "Dual AI - campaign - procurement",
+                    "Dual AI - campaign - distribution",
+                ],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings=DEFAULT_COST_ASSUMPTIONS,
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            budget_currency="usd",
+        )
+
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        self.assertEqual(len(interventions_costs), 2)
+        itn_routine = next(i for i in interventions_costs if i["code"] == "itn_routine")
+
+        # Routine assertions
+
+        correct_routine_target_pop = (POP_PW + POP_0_5) * 3
+        correct_routine_procurement_cost = 3.49 * correct_routine_target_pop * 0.3 * 1.1
+        correct_routine_distribution_cost = (
+            0.36 * correct_routine_target_pop * 0.3 * 1.1
+        )
+        correct_routine_total_cost = (
+            correct_routine_procurement_cost + correct_routine_distribution_cost
+        )
+        self.assertAlmostEqual(itn_routine["total_pop"], correct_routine_target_pop)
+        self.assertAlmostEqual(itn_routine["total_cost"], correct_routine_total_cost)
+        self.assertEqual(itn_routine["type"], "Dual AI")
+        self.assertEqual(itn_routine["code"], "itn_routine")
+        self.assertEqual(len(itn_routine["cost_breakdown"]), 2)
+        for cost_breakdown in itn_routine["cost_breakdown"]:
+            if cost_breakdown["cost_class"] == "Procurement":
+                self.assertAlmostEqual(
+                    cost_breakdown["cost"], correct_routine_procurement_cost
+                )
+            elif cost_breakdown["cost_class"] == "Distribution":
+                self.assertAlmostEqual(
+                    cost_breakdown["cost"], correct_routine_distribution_cost
+                )
+            else:
+                self.fail("Unexpected cost_class in itn_routine cost_breakdown")
+        # Campaign assertions
+        itn_campaign = next(
+            i for i in interventions_costs if i["code"] == "itn_campaign"
+        )
+        correct_campaign_target_pop = (
+            POP_TOTAL * DEFAULT_COST_ASSUMPTIONS["itn_campaign_coverage"]
+        )
+        correct_campaign_procurement_cost = (
+            3.49
+            * correct_campaign_target_pop
+            * DEFAULT_COST_ASSUMPTIONS["itn_campaign_buffer_mult"]
+            / DEFAULT_COST_ASSUMPTIONS["itn_campaign_divisor"]
+        )
+        correct_campaign_distribution_cost = (
+            6.25
+            * correct_campaign_target_pop
+            * DEFAULT_COST_ASSUMPTIONS["itn_campaign_buffer_mult"]
+            / DEFAULT_COST_ASSUMPTIONS["itn_campaign_divisor"]
+            / DEFAULT_COST_ASSUMPTIONS["itn_campaign_bale_size"]
+        )
+        correct_campaign_total_cost = (
+            correct_campaign_procurement_cost + correct_campaign_distribution_cost
+        )
+        self.assertAlmostEqual(itn_campaign["total_pop"], correct_campaign_target_pop)
+        self.assertAlmostEqual(itn_campaign["total_cost"], correct_campaign_total_cost)
+        self.assertEqual(itn_campaign["type"], "Dual AI")
+        self.assertEqual(itn_campaign["code"], "itn_campaign")
+        self.assertEqual(len(itn_campaign["cost_breakdown"]), 2)
+        for cost_breakdown in itn_campaign["cost_breakdown"]:
+            if cost_breakdown["cost_class"] == "Procurement":
+                self.assertAlmostEqual(
+                    cost_breakdown["cost"], correct_campaign_procurement_cost
+                )
+            elif cost_breakdown["cost_class"] == "Distribution":
+                self.assertAlmostEqual(
+                    cost_breakdown["cost"], correct_campaign_distribution_cost
+                )
+            else:
+                self.fail("Unexpected cost_class in itn_campaign cost_breakdown")
