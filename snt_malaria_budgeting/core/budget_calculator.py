@@ -55,11 +55,11 @@ class BudgetCalculator:
         self._merge_cost_overrides()
         self._normalize_cost_dataframe()
         costs_for_year = self.cost_df[self.cost_df["cost_year_for_analysis"] == year]
-
+        pop_for_year = self.population_df[self.population_df["year"] == year]
         budget = generate_budget(
             scen_data=scen_data,
             cost_data=costs_for_year,
-            target_population=self.population_df,
+            target_population=pop_for_year,
             assumptions=self.settings,
             spatial_planning_unit=self.spatial_planning_unit,
             local_currency_symbol=self.local_currency.upper(),
@@ -77,20 +77,21 @@ class BudgetCalculator:
             costs = []
             cost_classes = budget["cost_class"].unique()
             total_cost = 0
-            total_pop = 0
+            total_pop = self._get_total_population(
+                budget, code, intervention_type, self.budget_currency
+            )
             for cost_class in cost_classes:
-                cost_class_data = self._get_cost_class_data(
-                    budget, intervention_type, self.budget_currency, cost_class
+                cost = self._get_cost(
+                    budget, code, intervention_type, self.budget_currency, cost_class
                 )
-                if cost_class_data["cost"] > 0:
+                if cost > 0:
                     costs.append(
                         {
                             "cost_class": cost_class,
-                            "cost": cost_class_data["cost"],
+                            "cost": cost,
                         }
                     )
-                total_cost += cost_class_data["cost"]
-                total_pop += cost_class_data["pop"]
+                total_cost += cost
 
             interventions_costs.append(
                 {
@@ -226,24 +227,35 @@ class BudgetCalculator:
             self.cost_df["cost_year_for_analysis"] = self.cost_df["cost_year"]
         return self.cost_df
 
-    def _get_cost_class_data(self, budget, intervention_type, currency, cost_class):
+    def _get_cost(
+        self, budget, intervention_code, intervention_type, currency, cost_class
+    ):
         """
-        Helper function to get the total cost for a specific intervention, currency, year and cost class.
+        Helper function to get the total cost for a specific intervention, currency, cost class.
         """
+
         cost = budget[
             (budget["type_intervention"] == intervention_type)
+            & (budget["code_intervention"] == intervention_code)
             & (budget["currency"] == currency.upper())
-            # & (budget["year"] == budget.year) # Budget is per year anyway
             & (budget["cost_class"] == cost_class)
         ]["cost_element"].sum()
-        pop = budget[
-            (budget["type_intervention"] == intervention_type)
-            & (budget["currency"] == currency.upper())
-            # & (budget["year"] == budget.year)  # Budget is per year anyway
-            & (budget["cost_class"] == cost_class)
-        ]["target_pop"].sum()
 
-        return {"cost": cost, "pop": pop}
+        return cost
+
+    def _get_total_population(
+        self, budget, intervention_code, intervention_type, currency
+    ):
+        total_pop = (
+            budget[
+                (budget["code_intervention"] == intervention_code)
+                & (budget["type_intervention"] == intervention_type)
+                & (budget["currency"] == currency.upper())
+            ]
+            .drop_duplicates(subset=[self.spatial_planning_unit])["target_pop"]
+            .sum()
+        )
+        return total_pop
 
 
 def get_budget(
