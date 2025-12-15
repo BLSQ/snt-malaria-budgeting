@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.4.2...v0.5.0) (2025-12-15)
+
+
+### Features
+
+* Calculate total pop and cost based on intervention code and type ([#20](https://github.com/BLSQ/snt-malaria-budgeting/issues/20)) ([b34e7dc](https://github.com/BLSQ/snt-malaria-budgeting/commit/b34e7dc5c90fe1856c13b2408b378edcf379c24b))
+
 ## [0.4.2](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.4.1...v0.4.2) (2025-11-24)
 
 
