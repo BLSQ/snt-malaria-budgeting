@@ -84,13 +84,12 @@ class BudgetCalculator:
 
         # Group by intervention type and code to get populations
         # Drop duplicates per spatial unit before summing target_pop
-        pop_grouped = budget_filtered.groupby(
-            ["type_intervention", "code_intervention"]
-        ).apply(
-            lambda x: x.drop_duplicates(subset=[self.spatial_planning_unit])[
-                "target_pop"
-            ].sum(),
-            include_groups=False,
+        pop_grouped = (
+            budget_filtered.drop_duplicates(
+                subset=["type_intervention", "code_intervention", self.spatial_planning_unit]
+            )
+            .groupby(["type_intervention", "code_intervention"])["target_pop"]
+            .sum()
         )
 
         interventions_costs = []
