@@ -71,34 +71,46 @@ class BudgetCalculator:
 
     def get_interventions_costs(self, year):
         budget = self.calculate_budget(year)
+        # Filter budget for desired currency (it has two currencies: local and USD)
+        budget_filtered = budget[budget["currency"] == self.budget_currency.upper()]
+
+        # Get cost classes once
+        cost_classes = budget_filtered["cost_class"].unique()
+
+        # Get total costs per intervention and cost_class
+        costs_grouped = budget_filtered.groupby(
+            ["type_intervention", "code_intervention", "cost_class"]
+        )["cost_element"].sum()
+
+        # Group by intervention type and code to get populations
+        # Drop duplicates per spatial unit before summing target_pop
+        pop_grouped = budget_filtered.groupby(
+            ["type_intervention", "code_intervention"]
+        ).apply(
+            lambda x: x.drop_duplicates(subset=[self.spatial_planning_unit])[
+                "target_pop"
+            ].sum(),
+            include_groups=False,
+        )
+
         interventions_costs = []
         # Create a dict summarizing the total costs per intervention _type_
         for intervention_type, code in self.intervention_types_and_codes:
             costs = []
-            cost_classes = budget["cost_class"].unique()
             total_cost = 0
-            total_pop = self._get_total_population(
-                budget, code, intervention_type, self.budget_currency
-            )
+
             for cost_class in cost_classes:
-                cost = self._get_cost(
-                    budget, code, intervention_type, self.budget_currency, cost_class
-                )
+                cost = costs_grouped.get((intervention_type, code, cost_class), 0)
                 if cost > 0:
-                    costs.append(
-                        {
-                            "cost_class": cost_class,
-                            "cost": cost,
-                        }
-                    )
-                total_cost += cost
+                    costs.append({"cost_class": cost_class, "cost": cost})
+                    total_cost += cost
 
             interventions_costs.append(
                 {
                     "type": intervention_type,
                     "code": code,
                     "total_cost": total_cost,
-                    "total_pop": total_pop,
+                    "total_pop": pop_grouped.get((intervention_type, code), 0),
                     "cost_breakdown": costs,
                 }
             )
@@ -404,10 +416,12 @@ def get_budget(
 
         intervention_types_and_codes = [[i.type, i.code] for i in interventions_input]
 
+        # Get cost classes once
+        cost_classes = budget["cost_class"].unique()
+
         # Create a dict summarizing the total costs per intervention _type_
         for intervention_type, code in intervention_types_and_codes:
             costs = []
-            cost_classes = budget["cost_class"].unique()
             total_cost = 0
             total_pop = 0
             for cost_class in cost_classes:
