@@ -334,7 +334,6 @@ class TestGetBudget(unittest.TestCase):
         # formula: target_pop * pop_prop * coverage * monthly_rounds * buffer * unit_cost
         # (for each age group)
         # target_pop = pop * (pop_prop_3_11 + pop_prop_12_59) * coverage
-        # TODO: target_pop is duplicated across both age group rows, so total_pop is 2x
         self.assertAlmostEqual(smc["total_pop"], correct_target_pop)
         self.assertAlmostEqual(smc["total_cost"], correct_smc_cost)
         self.assertEqual(smc["type"], "SP+AQ")

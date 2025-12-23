@@ -106,35 +106,47 @@ class BudgetCalculator:
 
     def get_places_costs(self, year):
         budget = self.calculate_budget(year)
+        # Filter budget for desired currency (it has two currencies: local and USD)
+        budget_filtered_by_currency = budget[
+            budget["currency"] == self.budget_currency.upper()
+        ]
+
+        # Group to have cost per place and intervention type and code
+        grouped_per_place_and_intervention = (
+            budget_filtered_by_currency.groupby(
+                [self.spatial_planning_unit, "type_intervention", "code_intervention"]
+            )
+            .sum()
+            .reset_index()
+        )
+
+        # get total costs per place
+        place_totals = budget_filtered_by_currency.groupby(self.spatial_planning_unit)[
+            "cost_element"
+        ].sum()
 
         place_costs = []
         for place in self.places:
-            place_budget = budget[budget[self.spatial_planning_unit] == place]
+            place_interventions = grouped_per_place_and_intervention[
+                grouped_per_place_and_intervention[self.spatial_planning_unit] == place
+            ]
 
-            total_place_cost = place_budget[
-                (place_budget["currency"] == self.budget_currency.upper())
-            ]["cost_element"].sum()
+            interventions_list = []
 
-            place_interventions = []
-            for intervention_type, code in self.intervention_types_and_codes:
-                intervention_cost = place_budget[
-                    (place_budget["type_intervention"] == intervention_type)
-                    & (place_budget["currency"] == self.budget_currency.upper())
-                ]["cost_element"].sum()
-                if intervention_cost > 0:
-                    place_interventions.append(
+            for _, row in place_interventions.iterrows():
+                if row["cost_element"] > 0:
+                    interventions_list.append(
                         {
-                            "type": intervention_type,
-                            "code": code,
-                            "total_cost": intervention_cost,
+                            "type": row["type_intervention"],
+                            "code": row["code_intervention"],
+                            "total_cost": row["cost_element"],
                         }
                     )
-
             place_costs.append(
                 {
                     "place": place,
-                    "total_cost": total_place_cost,
-                    "interventions": place_interventions,
+                    "total_cost": place_totals.get(place, 0),
+                    "interventions": interventions_list,
                 }
             )
         return place_costs
