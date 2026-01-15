@@ -1,4 +1,4 @@
 # Development and formatting tools
-ruff==0.14.11
+ruff==0.14.13
 pydantic==2.12.5
 pandas==2.3.3
