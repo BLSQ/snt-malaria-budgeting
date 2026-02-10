@@ -140,6 +140,11 @@ class BudgetCalculator:
             "cost_element"
         ].sum()
 
+        # get costs per place and cost_class
+        place_cost_class_totals = budget_filtered_by_currency.groupby(
+            [self.spatial_planning_unit, "cost_class"]
+        )["cost_element"].sum()
+
         place_costs = []
         for place in self.places:
             place_interventions = grouped_per_place_and_intervention[
@@ -157,10 +162,20 @@ class BudgetCalculator:
                             "total_cost": row["cost_element"],
                         }
                     )
+
+            cost_breakdown = []
+            if place in place_cost_class_totals.index.get_level_values(0):
+                for cost_class, cost in place_cost_class_totals[place].items():
+                    if cost > 0:
+                        cost_breakdown.append(
+                            {"cost_class": cost_class, "cost": cost}
+                        )
+
             place_costs.append(
                 {
                     "place": place,
                     "total_cost": place_totals.get(place, 0),
+                    "cost_breakdown": cost_breakdown,
                     "interventions": interventions_list,
                 }
             )
