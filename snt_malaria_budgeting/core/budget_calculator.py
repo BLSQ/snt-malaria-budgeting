@@ -152,9 +152,10 @@ class BudgetCalculator:
         for place in self.places:
             interventions_list = []
             if place in places_with_interventions:
-                for (type_intervention, code_intervention), cost in (
-                    grouped_per_place_and_intervention[place].items()
-                ):
+                for (
+                    type_intervention,
+                    code_intervention,
+                ), cost in grouped_per_place_and_intervention[place].items():
                     if cost > 0:
                         interventions_list.append(
                             {
@@ -168,9 +169,7 @@ class BudgetCalculator:
             if place in places_with_cost_classes:
                 for cost_class, cost in place_cost_class_totals[place].items():
                     if cost > 0:
-                        cost_breakdown.append(
-                            {"cost_class": cost_class, "cost": cost}
-                        )
+                        cost_breakdown.append({"cost_class": cost_class, "cost": cost})
 
             place_costs.append(
                 {

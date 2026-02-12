@@ -82,7 +82,9 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
         self.assertEqual(len(place_1001["cost_breakdown"]), 1)
         self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost)
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -136,7 +138,9 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
         self.assertEqual(len(place_1001["cost_breakdown"]), 1)
         self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost)
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -359,7 +363,9 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(place_1001["total_cost"], correct_smc_cost)
         self.assertEqual(len(place_1001["cost_breakdown"]), 1)
         self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(place_1001["cost_breakdown"][0]["cost"], correct_smc_cost)
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_smc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP+AQ")
@@ -440,7 +446,9 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(place_1001["total_cost"], correct_pmc_cost)
         self.assertEqual(len(place_1001["cost_breakdown"]), 1)
         self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(place_1001["cost_breakdown"][0]["cost"], correct_pmc_cost)
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_pmc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -508,7 +516,9 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(place_1001["total_cost"], correct_vacc_cost)
         self.assertEqual(len(place_1001["cost_breakdown"]), 1)
         self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(place_1001["cost_breakdown"][0]["cost"], correct_vacc_cost)
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_vacc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "R21")
