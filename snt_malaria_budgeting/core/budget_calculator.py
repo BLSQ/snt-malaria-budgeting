@@ -127,40 +127,55 @@ class BudgetCalculator:
         ]
 
         # Group to have cost per place and intervention type and code
-        grouped_per_place_and_intervention = (
-            budget_filtered_by_currency.groupby(
-                [self.spatial_planning_unit, "type_intervention", "code_intervention"]
-            )
-            .sum()
-            .reset_index()
-        )
+        grouped_per_place_and_intervention = budget_filtered_by_currency.groupby(
+            [self.spatial_planning_unit, "type_intervention", "code_intervention"]
+        )["cost_element"].sum()
 
         # get total costs per place
         place_totals = budget_filtered_by_currency.groupby(self.spatial_planning_unit)[
             "cost_element"
         ].sum()
 
+        # get costs per place and cost_class
+        place_cost_class_totals = budget_filtered_by_currency.groupby(
+            [self.spatial_planning_unit, "cost_class"]
+        )["cost_element"].sum()
+
+        places_with_interventions = set(
+            grouped_per_place_and_intervention.index.get_level_values(0)
+        )
+        places_with_cost_classes = set(
+            place_cost_class_totals.index.get_level_values(0)
+        )
+
         place_costs = []
         for place in self.places:
-            place_interventions = grouped_per_place_and_intervention[
-                grouped_per_place_and_intervention[self.spatial_planning_unit] == place
-            ]
-
             interventions_list = []
+            if place in places_with_interventions:
+                for (
+                    type_intervention,
+                    code_intervention,
+                ), cost in grouped_per_place_and_intervention[place].items():
+                    if cost > 0:
+                        interventions_list.append(
+                            {
+                                "type": type_intervention,
+                                "code": code_intervention,
+                                "total_cost": cost,
+                            }
+                        )
 
-            for _, row in place_interventions.iterrows():
-                if row["cost_element"] > 0:
-                    interventions_list.append(
-                        {
-                            "type": row["type_intervention"],
-                            "code": row["code_intervention"],
-                            "total_cost": row["cost_element"],
-                        }
-                    )
+            cost_breakdown = []
+            if place in places_with_cost_classes:
+                for cost_class, cost in place_cost_class_totals[place].items():
+                    if cost > 0:
+                        cost_breakdown.append({"cost_class": cost_class, "cost": cost})
+
             place_costs.append(
                 {
                     "place": place,
                     "total_cost": place_totals.get(place, 0),
+                    "cost_breakdown": cost_breakdown,
                     "interventions": interventions_list,
                 }
             )

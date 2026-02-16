@@ -80,6 +80,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -131,6 +136,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -178,7 +188,7 @@ class TestGetBudget(unittest.TestCase):
         correct_pbo_target_pop = POP_PW + POP_0_5
         correct_target_pbo_cost = 3.49 * correct_pbo_target_pop * 0.3 * 1.1
 
-        # formula: pop * coverage * doses * buffer
+        # formula: pop * coverage * buffer
         self.assertAlmostEqual(pbo_budget["total_pop"], correct_pbo_target_pop)
         self.assertAlmostEqual(pbo_budget["total_cost"], correct_target_pbo_cost)
         self.assertEqual(pbo_budget["type"], "PBO")
@@ -262,6 +272,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_itn_campaign_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Procurement")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_itn_campaign_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "PBO")
@@ -346,6 +361,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_smc_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_smc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP+AQ")
@@ -424,6 +444,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_pmc_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_pmc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -489,6 +514,11 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_vacc_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_vacc_cost
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "R21")
@@ -602,6 +632,11 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(
             place_1001["total_cost"], correct_iptp_cost_location_1001
         )
+        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
+        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1001
+        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -615,6 +650,12 @@ class TestGetBudget(unittest.TestCase):
         )
         self.assertAlmostEqual(
             place_1002["total_cost"], correct_iptp_cost_location_1002 + correct_smc_cost
+        )
+        self.assertEqual(len(place_1002["cost_breakdown"]), 1)
+        self.assertEqual(place_1002["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_1002["cost_breakdown"][0]["cost"],
+            correct_iptp_cost_location_1002 + correct_smc_cost,
         )
         self.assertEqual(len(place_1002["interventions"]), 2)
         place_iptp = place_1002["interventions"][0]
@@ -748,3 +789,60 @@ class TestGetBudget(unittest.TestCase):
                 )
             else:
                 self.fail("Unexpected cost_class in itn_campaign cost_breakdown")
+
+    def test_get_places_costs_multiple_cost_classes(self):
+        interventions = [
+            InterventionDetailModel(code="itn_routine", type="Dual AI", places=[1001])
+        ]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["itn_routine", "itn_routine", "itn_routine"],
+                "type_intervention": ["Dual AI", "Dual AI", "Dual AI"],
+                "unit": ["per ITN", "per ITN", "per ITN"],
+                "cost_class": ["Procurement", "Distribution", "Operational"],
+                "cost_year_for_analysis": [2025, 2025, 2025],
+                "usd_cost": [3.49, 0.36, 0.15],
+                "local_currency_cost": [1, 1, 1],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings=DEFAULT_COST_ASSUMPTIONS,
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            budget_currency="usd",
+        )
+
+        places_costs = budget_calculator.get_places_costs(2025)
+
+        # formula: pop * coverage * buffer
+        correct_multiplier = (POP_PW + POP_0_5) * 0.3 * 1.1
+        correct_procurement_cost = 3.49 * correct_multiplier
+        correct_distribution_cost = 0.36 * correct_multiplier
+        correct_operational_cost = 0.15 * correct_multiplier
+        correct_total_cost = (
+            correct_procurement_cost
+            + correct_distribution_cost
+            + correct_operational_cost
+        )
+
+        place_1001 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1001
+        )
+        self.assertAlmostEqual(place_1001["total_cost"], correct_total_cost)
+        self.assertEqual(len(place_1001["cost_breakdown"]), 3)
+        for cost_breakdown in place_1001["cost_breakdown"]:
+            if cost_breakdown["cost_class"] == "Procurement":
+                self.assertAlmostEqual(cost_breakdown["cost"], correct_procurement_cost)
+            elif cost_breakdown["cost_class"] == "Distribution":
+                self.assertAlmostEqual(
+                    cost_breakdown["cost"], correct_distribution_cost
+                )
+            elif cost_breakdown["cost_class"] == "Operational":
+                self.assertAlmostEqual(cost_breakdown["cost"], correct_operational_cost)
+            else:
+                self.fail("Unexpected cost_class in place cost_breakdown")
