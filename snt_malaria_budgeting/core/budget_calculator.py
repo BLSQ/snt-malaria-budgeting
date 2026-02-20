@@ -126,9 +126,14 @@ class BudgetCalculator:
             budget["currency"] == self.budget_currency.upper()
         ]
 
-        # Group to have cost per place and intervention type and code
-        grouped_per_place_and_intervention = budget_filtered_by_currency.groupby(
-            [self.spatial_planning_unit, "type_intervention", "code_intervention"]
+        # Group to have cost per place, intervention type/code, and cost_class
+        grouped_per_place_intervention_class = budget_filtered_by_currency.groupby(
+            [
+                self.spatial_planning_unit,
+                "type_intervention",
+                "code_intervention",
+                "cost_class",
+            ]
         )["cost_element"].sum()
 
         # get total costs per place
@@ -136,49 +141,46 @@ class BudgetCalculator:
             "cost_element"
         ].sum()
 
-        # get costs per place and cost_class
-        place_cost_class_totals = budget_filtered_by_currency.groupby(
-            [self.spatial_planning_unit, "cost_class"]
-        )["cost_element"].sum()
-
-        places_with_interventions = set(
-            grouped_per_place_and_intervention.index.get_level_values(0)
-        )
-        places_with_cost_classes = set(
-            place_cost_class_totals.index.get_level_values(0)
+        places_with_data = set(
+            grouped_per_place_intervention_class.index.get_level_values(0)
         )
 
         place_costs = []
         for place in self.places:
             interventions_list = []
-            if place in places_with_interventions:
+            if place in places_with_data:
+                place_data = grouped_per_place_intervention_class[place]
+                interventions_dict = {}
                 for (
                     type_intervention,
                     code_intervention,
-                ), cost in grouped_per_place_and_intervention[place].items():
+                    cost_class,
+                ), cost in place_data.items():
+                    key = (type_intervention, code_intervention)
+                    if key not in interventions_dict:
+                        interventions_dict[key] = {
+                            "type": type_intervention,
+                            "code": code_intervention,
+                            "total_cost": 0,
+                            "cost_breakdown": [],
+                        }
                     if cost > 0:
-                        interventions_list.append(
-                            {
-                                "type": type_intervention,
-                                "code": code_intervention,
-                                "total_cost": cost,
-                            }
+                        interventions_dict[key]["total_cost"] += cost
+                        interventions_dict[key]["cost_breakdown"].append(
+                            {"cost_class": cost_class, "cost": cost}
                         )
-
-            cost_breakdown = []
-            if place in places_with_cost_classes:
-                for cost_class, cost in place_cost_class_totals[place].items():
-                    if cost > 0:
-                        cost_breakdown.append({"cost_class": cost_class, "cost": cost})
+                interventions_list = [
+                    v for v in interventions_dict.values() if v["total_cost"] > 0
+                ]
 
             place_costs.append(
                 {
                     "place": place,
                     "total_cost": place_totals.get(place, 0),
-                    "cost_breakdown": cost_breakdown,
                     "interventions": interventions_list,
                 }
             )
+
         return place_costs
 
     def _get_scenario_data(
