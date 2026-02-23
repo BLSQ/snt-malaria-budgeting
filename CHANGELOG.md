@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.6.0...v0.7.0) (2026-02-23)
+
+
+### Features
+
+* Add full cost_class details per intervention to `get_places_costs()` output (SNT-225) ([#40](https://github.com/BLSQ/snt-malaria-budgeting/issues/40)) ([c619474](https://github.com/BLSQ/snt-malaria-budgeting/commit/c619474b0ee517a86c240856b1a5a2f4e22e5884))
+
 ## [0.6.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.5.1...v0.6.0) (2026-02-16)
 
 
