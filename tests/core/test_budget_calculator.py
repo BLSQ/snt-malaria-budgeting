@@ -80,16 +80,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
         self.assertEqual(place_iptp["code"], "iptp")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
 
     def test_get_budget_iptp(self):
         interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
@@ -136,16 +136,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
         self.assertEqual(place_iptp["code"], "iptp")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
 
     def test_get_budget_itn_routine(self):
         interventions = [
@@ -272,16 +272,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_itn_campaign_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Procurement")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_itn_campaign_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "PBO")
         self.assertEqual(place_iptp["code"], "itn_campaign")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_itn_campaign_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Procurement")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_itn_campaign_cost
+        )
 
     def test_get_budget_smc(self):
         interventions = [
@@ -361,16 +361,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_smc_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_smc_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP+AQ")
         self.assertEqual(place_iptp["code"], "smc")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_smc_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_smc_cost
+        )
 
     def test_get_budget_pmc(self):
         interventions = [InterventionDetailModel(code="pmc", type="SP", places=[1001])]
@@ -444,16 +444,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_pmc_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_pmc_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
         self.assertEqual(place_iptp["code"], "pmc")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_pmc_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_pmc_cost
+        )
 
     def test_get_budget_vacc(self):
         interventions = [
@@ -514,16 +514,16 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_vacc_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_vacc_cost
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "R21")
         self.assertEqual(place_iptp["code"], "vacc")
         self.assertAlmostEqual(place_iptp["total_cost"], correct_vacc_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_vacc_cost
+        )
 
     def test_get_budget_multiple_interventions(self):
         interventions = [
@@ -632,17 +632,17 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(
             place_1001["total_cost"], correct_iptp_cost_location_1001
         )
-        self.assertEqual(len(place_1001["cost_breakdown"]), 1)
-        self.assertEqual(place_1001["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1001["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1001
-        )
         self.assertEqual(len(place_1001["interventions"]), 1)
         place_iptp = place_1001["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
         self.assertEqual(place_iptp["code"], "iptp")
         self.assertAlmostEqual(
             place_iptp["total_cost"], correct_iptp_cost_location_1001
+        )
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1001
         )
 
         place_1002 = next(
@@ -651,12 +651,6 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(
             place_1002["total_cost"], correct_iptp_cost_location_1002 + correct_smc_cost
         )
-        self.assertEqual(len(place_1002["cost_breakdown"]), 1)
-        self.assertEqual(place_1002["cost_breakdown"][0]["cost_class"], "Commodity")
-        self.assertAlmostEqual(
-            place_1002["cost_breakdown"][0]["cost"],
-            correct_iptp_cost_location_1002 + correct_smc_cost,
-        )
         self.assertEqual(len(place_1002["interventions"]), 2)
         place_iptp = place_1002["interventions"][0]
         self.assertEqual(place_iptp["type"], "SP")
@@ -664,10 +658,18 @@ class TestGetBudget(unittest.TestCase):
         self.assertAlmostEqual(
             place_iptp["total_cost"], correct_iptp_cost_location_1002
         )
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1002
+        )
         place_smc = place_1002["interventions"][1]
         self.assertEqual(place_smc["type"], "SP+AQ")
         self.assertEqual(place_smc["code"], "smc")
         self.assertAlmostEqual(place_smc["total_cost"], correct_smc_cost)
+        self.assertEqual(len(place_smc["cost_breakdown"]), 1)
+        self.assertEqual(place_smc["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(place_smc["cost_breakdown"][0]["cost"], correct_smc_cost)
 
     def test_budget_itn(self):
         interventions = [
@@ -834,8 +836,13 @@ class TestGetBudget(unittest.TestCase):
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
         )
         self.assertAlmostEqual(place_1001["total_cost"], correct_total_cost)
-        self.assertEqual(len(place_1001["cost_breakdown"]), 3)
-        for cost_breakdown in place_1001["cost_breakdown"]:
+        self.assertEqual(len(place_1001["interventions"]), 1)
+        place_itn_routine = place_1001["interventions"][0]
+        self.assertEqual(place_itn_routine["type"], "Dual AI")
+        self.assertEqual(place_itn_routine["code"], "itn_routine")
+        self.assertAlmostEqual(place_itn_routine["total_cost"], correct_total_cost)
+        self.assertEqual(len(place_itn_routine["cost_breakdown"]), 3)
+        for cost_breakdown in place_itn_routine["cost_breakdown"]:
             if cost_breakdown["cost_class"] == "Procurement":
                 self.assertAlmostEqual(cost_breakdown["cost"], correct_procurement_cost)
             elif cost_breakdown["cost_class"] == "Distribution":
@@ -845,4 +852,4 @@ class TestGetBudget(unittest.TestCase):
             elif cost_breakdown["cost_class"] == "Operational":
                 self.assertAlmostEqual(cost_breakdown["cost"], correct_operational_cost)
             else:
-                self.fail("Unexpected cost_class in place cost_breakdown")
+                self.fail("Unexpected cost_class in itn_routine cost_breakdown")
