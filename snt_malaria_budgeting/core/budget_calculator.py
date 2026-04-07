@@ -4,18 +4,6 @@ import pandas as pd
 from ..models import InterventionDetailModel, CostItems
 from .PATH_generate_budget import generate_budget
 
-INTERVENTION_BUDGET_CODES = (
-    "itn_campaign",
-    "itn_routine",
-    "iptp",
-    "smc",
-    "pmc",
-    "vacc",
-    # Coming soon:
-    # "irs",
-    # "lsm",
-)
-
 
 class BudgetCalculator:
     def __init__(
@@ -71,6 +59,9 @@ class BudgetCalculator:
 
     def get_interventions_costs(self, year):
         budget = self.calculate_budget(year)
+        if budget.empty:
+            return []
+
         # Filter budget for desired currency (it has two currencies: local and USD)
         budget_filtered = budget[budget["currency"] == self.budget_currency.upper()]
 
@@ -122,6 +113,9 @@ class BudgetCalculator:
     def get_places_costs(self, year):
         budget = self.calculate_budget(year)
         # Filter budget for desired currency (it has two currencies: local and USD)
+        if budget.empty:
+            return []
+
         budget_filtered_by_currency = budget[
             budget["currency"] == self.budget_currency.upper()
         ]
@@ -183,6 +177,19 @@ class BudgetCalculator:
 
         return place_costs
 
+    def _set_intervention_scen_data(self, budget_code, interventions, scen_data):
+        code_column = f"code_{budget_code}"
+        type_column = f"type_{budget_code}"
+
+        for intervention in interventions:
+            intervention_places = intervention.places
+            intervention_type = intervention.type
+
+            # Use vectorized operations instead of apply()
+            mask = scen_data[self.spatial_planning_unit].isin(intervention_places)
+            scen_data.loc[mask, code_column] = 1
+            scen_data.loc[mask, type_column] = intervention_type
+
     def _get_scenario_data(
         self,
         year: int,
@@ -200,25 +207,16 @@ class BudgetCalculator:
         #################################################################################
         # Pre-group interventions by code to avoid repeated filtering
         interventions_by_code = {}
+        budget_codes = set()
         for intervention in self.interventions_input:
             if intervention.code not in interventions_by_code:
                 interventions_by_code[intervention.code] = []
+                budget_codes.add(intervention.code)
             interventions_by_code[intervention.code].append(intervention)
 
-        for budget_code in INTERVENTION_BUDGET_CODES:
+        for budget_code in budget_codes:
             interventions = interventions_by_code.get(budget_code, [])
-
-            code_column = f"code_{budget_code}"
-            type_column = f"type_{budget_code}"
-
-            for intervention in interventions:
-                intervention_places = intervention.places
-                intervention_type = intervention.type
-
-                # Use vectorized operations instead of apply()
-                mask = scen_data[self.spatial_planning_unit].isin(intervention_places)
-                scen_data.loc[mask, code_column] = 1
-                scen_data.loc[mask, type_column] = intervention_type
+            self._set_intervention_scen_data(budget_code, interventions, scen_data)
 
         return scen_data
 
