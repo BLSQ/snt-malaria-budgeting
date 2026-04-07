@@ -10,6 +10,15 @@ from .calculation_functions import (
     VaccQuantification,
 )
 
+INTERVENTION_QUANTIFICATION_CLASSES = {
+    "code_itn_campaign": ItnCampaignQuantification,
+    "code_itn_routine": ItnRoutineQuantification,
+    "code_iptp": IPTPQuantification,
+    "code_smc": SMCQuantification,
+    "code_pmc": PMCQuantification,
+    "code_vacc": VaccQuantification,
+}
+
 
 def generate_budget(
     scen_data: pd.DataFrame,
@@ -61,67 +70,18 @@ def generate_budget(
     all_quantifications = []
 
     # --- Quantification by Intervention (Partner Guide: 4.3) ---
-
-    # 4.3.1 ITN — Campaign
-    if "code_itn_campaign" in scen_data.columns:
-        itn_campaign_quantification = ItnCampaignQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-        all_quantifications.append(itn_campaign_quantification)
-
-    # 4.3.2 ITN — Routine
-    if "code_itn_routine" in scen_data.columns:
-        itn_routine_quantification = ItnRoutineQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-
-        all_quantifications.append(itn_routine_quantification)
-
-    # 4.3.3 IPTp
-    if "code_iptp" in scen_data.columns:
-        iptp_quantification = IPTPQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-        all_quantifications.append(iptp_quantification)
-
-    # 4.3.4 SMC
-    if "code_smc" in scen_data.columns:
-        smc_quantification = SMCQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-        all_quantifications.append(smc_quantification)
-
-    # 4.3.5 PMC
-    if "code_pmc" in scen_data.columns:
-        pmc_quantification = PMCQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-        all_quantifications.append(pmc_quantification)
-
-    # 4.3.6 Vaccine
-    if "code_vacc" in scen_data.columns:
-        vacc_quantification = VaccQuantification(
-            spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
-        )
-        all_quantifications.append(vacc_quantification)
+    for (
+        code_column,
+        quantification_class,
+    ) in INTERVENTION_QUANTIFICATION_CLASSES.items():
+        if code_column in scen_data.columns:
+            quantification = quantification_class(
+                spacial_unit=spatial_planning_unit, assumptions=assumptions
+            ).get_quantification(
+                scen_data,
+                target_population,
+            )
+            all_quantifications.append(quantification)
 
     # --- Intervention Costing & Final Assembly (Partner Guide: 4.4, 4.5, 4.6) ---
     if not all_quantifications:
