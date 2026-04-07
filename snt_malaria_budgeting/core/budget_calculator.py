@@ -1,7 +1,7 @@
 from typing import Dict, List, Any, Optional
 
 import pandas as pd
-from ..models import InterventionDetailModel, CostItems
+from ..models import InterventionDetailModel, CostItems, MissingInterventionHandling
 from .PATH_generate_budget import generate_budget
 
 
@@ -16,6 +16,7 @@ class BudgetCalculator:
         spatial_planning_unit: str,
         budget_currency: str = "",
         cost_overrides: Optional[List[CostItems]] = None,
+        missing_intervention_handling: MissingInterventionHandling = MissingInterventionHandling.IGNORE,
     ):
         self.interventions_input = interventions_input
         self.settings = settings
@@ -25,6 +26,7 @@ class BudgetCalculator:
         self.spatial_planning_unit = spatial_planning_unit
         self.budget_currency = budget_currency if budget_currency else local_currency
         self.cost_overrides = cost_overrides if cost_overrides is not None else []
+        self.missing_intervention_handling = missing_intervention_handling
         self.places = (
             population_df[spatial_planning_unit].drop_duplicates().values.tolist()
         )
@@ -51,6 +53,7 @@ class BudgetCalculator:
             assumptions=self.settings,
             spatial_planning_unit=self.spatial_planning_unit,
             local_currency_symbol=self.local_currency.upper(),
+            missing_intervention_handling=self.missing_intervention_handling,
         )
 
         self.budgets[year] = budget

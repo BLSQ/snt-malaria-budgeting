@@ -34,6 +34,12 @@ DEFAULT_COST_ASSUMPTIONS = {
 }
 
 
+class MissingInterventionHandling(str):
+    IGNORE = "ignore"
+    ERROR = "error"
+    HANDLE = "handle"
+
+
 class InterventionDetailModel(BaseModel):
     type: str
     code: str

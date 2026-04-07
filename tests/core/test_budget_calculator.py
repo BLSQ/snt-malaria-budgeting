@@ -5,6 +5,7 @@ from snt_malaria_budgeting.core.budget_calculator import BudgetCalculator
 from snt_malaria_budgeting.models import (
     DEFAULT_COST_ASSUMPTIONS,
     InterventionDetailModel,
+    MissingInterventionHandling,
 )
 
 POP_TOTAL = 250000
@@ -58,6 +59,7 @@ class TestGetBudget(unittest.TestCase):
             self.population_df,
             local_currency="ngn",
             spatial_planning_unit="key",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -113,6 +115,7 @@ class TestGetBudget(unittest.TestCase):
             population_df=self.population_df,
             local_currency="ngn",
             spatial_planning_unit="key",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -176,6 +179,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -238,6 +242,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -312,6 +317,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -396,6 +402,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -481,6 +488,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -551,6 +559,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -591,6 +600,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -763,6 +773,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -860,6 +871,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            missing_intervention_handling=MissingInterventionHandling.HANDLE,
         )
 
         places_costs = budget_calculator.get_places_costs(2025)

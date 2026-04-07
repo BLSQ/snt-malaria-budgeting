@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 from snt_malaria_budgeting.core.budget_calculator import generate_budget
+from snt_malaria_budgeting.models import MissingInterventionHandling
 
 
 class TestGenerateBudget(unittest.TestCase):
@@ -196,7 +197,12 @@ class TestGenerateBudget(unittest.TestCase):
 
     @patch("pandas.read_csv")
     @patch("pandas.read_excel")
-    def run_generate_budget(self, mock_read_excel, mock_read_csv):
+    def run_generate_budget(
+        self,
+        mock_read_excel,
+        mock_read_csv,
+        missing_intervention_handling=MissingInterventionHandling.HANDLE,
+    ):
         """Helper method to run generate_budget with mocked file reads."""
         mock_read_excel.return_value = self.mock_population_data
         mock_read_csv.return_value = self.mock_cm_data
@@ -207,6 +213,7 @@ class TestGenerateBudget(unittest.TestCase):
             target_population=self.mock_population_data,
             assumptions=self.settings,
             spatial_planning_unit="adm2",
+            missing_intervention_handling=missing_intervention_handling,
         )
 
     def test_itn_campaign_quantification(self):
@@ -335,6 +342,36 @@ class TestGenerateBudget(unittest.TestCase):
             (result["code_intervention"] == "cm_public") & (result["currency"] == "USD")
         ]["cost_element"].sum()
         self.assertAlmostEqual(cm_cost, 126905.833171, 2)
+
+    def test_missing_intervention_handling(self):
+        """Verify that missing interventions are handled according to the specified setting."""
+        # Run with HANDLE setting - should not raise an error and should return a budget with available interventions
+        result_handle = self.run_generate_budget(
+            missing_intervention_handling=MissingInterventionHandling.HANDLE
+        )
+        self.assertFalse(result_handle.empty)
+        cm_cost_empty = result_handle[
+            (result_handle["code_intervention"] == "cm_public")
+        ]
+        self.assertFalse(cm_cost_empty.empty)  # Case management should be handled
+
+        # Run with ERROR setting - should raise a ValueError due to missing interventions
+        with self.assertRaises(ValueError):
+            self.run_generate_budget(
+                missing_intervention_handling=MissingInterventionHandling.ERROR
+            )
+
+        # Run with IGNORE setting - should not raise an error and should return a budget with available interventions, ignoring missing ones
+        result_ignore = self.run_generate_budget(
+            missing_intervention_handling=MissingInterventionHandling.IGNORE
+        )
+        self.assertFalse(result_ignore.empty)
+        cm_cost_empty = result_ignore[
+            (result_ignore["code_intervention"] == "cm_public")
+        ]
+        self.assertTrue(
+            cm_cost_empty.empty
+        )  # Case management should be missing and thus ignored
 
     def test_output_structure_and_completeness(self):
         """Verify the final DataFrame contains all expected interventions and columns."""

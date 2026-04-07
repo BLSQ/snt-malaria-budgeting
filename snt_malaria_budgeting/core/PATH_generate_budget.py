@@ -1,6 +1,8 @@
 import pandas as pd
 from typing import Dict
 
+from snt_malaria_budgeting.models import MissingInterventionHandling
+
 from .calculation_functions import (
     ItnCampaignQuantification,
     ItnRoutineQuantification,
@@ -28,6 +30,7 @@ def generate_budget(
     assumptions: Dict[str, float],
     spatial_planning_unit: str,
     local_currency_symbol: str = "NGN",
+    missing_intervention_handling: MissingInterventionHandling = MissingInterventionHandling.IGNORE,
 ) -> pd.DataFrame:
     """
     Generates a detailed intervention budget from scenarios & costs.
@@ -90,14 +93,32 @@ def generate_budget(
         if col.startswith("code_") and col not in INTERVENTION_QUANTIFICATION_CLASSES
     ]
 
-    for col in unknown_code_columns:
-        quantification = DefaultQuantification(
-            code=col, spacial_unit=spatial_planning_unit, assumptions=assumptions
-        ).get_quantification(
-            scen_data,
-            target_population,
+    if (
+        unknown_code_columns
+        and missing_intervention_handling == MissingInterventionHandling.ERROR
+    ):
+        raise ValueError(
+            f"Unknown intervention code columns found in scen_data: {unknown_code_columns}. "
+            "Please add quantification logic for these interventions or adjust the missing_intervention_handling parameter."
         )
-        all_quantifications.append(quantification)
+
+    if (
+        unknown_code_columns
+        and missing_intervention_handling == MissingInterventionHandling.HANDLE
+    ):
+        print(
+            f"Warning: Unknown intervention code columns found in scen_data: {unknown_code_columns}. "
+            "Using default quantification for these interventions."
+        )
+
+        for col in unknown_code_columns:
+            quantification = DefaultQuantification(
+                code=col, spacial_unit=spatial_planning_unit, assumptions=assumptions
+            ).get_quantification(
+                scen_data,
+                target_population,
+            )
+            all_quantifications.append(quantification)
 
     # --- Intervention Costing & Final Assembly (Partner Guide: 4.4, 4.5, 4.6) ---
     if not all_quantifications:
