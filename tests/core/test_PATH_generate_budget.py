@@ -86,6 +86,7 @@ class TestGenerateBudget(unittest.TestCase):
                 "code_vacc": [1],
                 "type_vacc": ["R21"],
                 "code_cm_public": [1],  # Case management is handled differently
+                "type_cm_public": ["CM"],
             }
         )
 
@@ -130,9 +131,6 @@ class TestGenerateBudget(unittest.TestCase):
                     "vacc",
                     "vacc",
                     "cm_public",
-                    "cm_public",
-                    "cm_public",
-                    "cm_public",
                 ],
                 "type_intervention": [
                     "Dual AI",
@@ -146,10 +144,7 @@ class TestGenerateBudget(unittest.TestCase):
                     "SP",
                     "R21",
                     "R21",
-                    "RDT kits",
-                    "AL",
-                    "Artesunate injections",
-                    "RAS",
+                    "CM",
                 ],
                 "unit": [
                     "per ITN",
@@ -163,12 +158,9 @@ class TestGenerateBudget(unittest.TestCase):
                     "per child",
                     "per dose",
                     "per child",
-                    "per RDT kit",
-                    "per AL",
-                    "per 60mg powder",
-                    "per RAS",
+                    "none",
                 ],
-                "cost_class": ["Commodity"] * 15,
+                "cost_class": ["Commodity"] * 12,
                 "cost_year_for_analysis": 2025,
                 "usd_cost": [
                     3.490605554,
@@ -183,9 +175,6 @@ class TestGenerateBudget(unittest.TestCase):
                     4.0,
                     1.0,
                     0.4625,
-                    1.22,
-                    2.003125,
-                    0.439375,
                 ],
                 "local_currency_cost": [
                     5584.968886,
@@ -200,11 +189,8 @@ class TestGenerateBudget(unittest.TestCase):
                     5800.0,
                     584.0,
                     740.0,
-                    1952.0,
-                    3205.0,
-                    703.0,
                 ],
-                "cost_name": ["test"] * 15,
+                "cost_name": ["test"] * 12,
             }
         )
 
@@ -284,12 +270,13 @@ class TestGenerateBudget(unittest.TestCase):
             df[df["unit"] == "per dose"]["quantity"].iloc[0], 40565.96406, 2
         )
 
-    # def test_case_management_quantification(self):
-    #     """Verify Case Management quantities are loaded correctly."""
-    #     result = self.run_generate_budget()
-    #     df = result[result['code_intervention'] == 'cm_public']
-    #     self.assertAlmostEqual(df[df['unit'] == 'per RDT kit']['quantity'].iloc[0], 500.0)
-    #     self.assertAlmostEqual(df[df['unit'] == 'per AL']['quantity'].iloc[0], 400.0)
+    def test_case_management_quantification(self):
+        """Verify Case Management quantities are loaded correctly."""
+        result = self.run_generate_budget()
+        df = result[result["code_intervention"] == "cm_public"]
+        self.assertAlmostEqual(
+            df[df["unit"] == "none"]["quantity"].iloc[0], 342988.7383 * 0.8, 2
+        )
 
     def test_final_cost_calculation(self):
         """Verify a final cost_element calculation."""
@@ -342,6 +329,12 @@ class TestGenerateBudget(unittest.TestCase):
             (result["code_intervention"] == "pmc") & (result["currency"] == "USD")
         ]["cost_element"].sum()
         self.assertAlmostEqual(pmc_cost, 23595.0956, 2)
+
+        # Case management: 342988.7383 cases * 0.8 coverage * $0.4625/case = $126,860.7125
+        cm_cost = result[
+            (result["code_intervention"] == "cm_public") & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(cm_cost, 126905.833171, 2)
 
     def test_output_structure_and_completeness(self):
         """Verify the final DataFrame contains all expected interventions and columns."""

@@ -30,6 +30,7 @@ DEFAULT_COST_ASSUMPTIONS = {
     "irs_type": "Sumishield",
     "lsm_type": "Bti",
     "vacc_type": "R21",
+    "default_coverage": 0.8,
 }
 
 

@@ -8,6 +8,7 @@ from .calculation_functions import (
     PMCQuantification,
     SMCQuantification,
     VaccQuantification,
+    DefaultQuantification,
 )
 
 INTERVENTION_QUANTIFICATION_CLASSES = {
@@ -82,6 +83,21 @@ def generate_budget(
                 target_population,
             )
             all_quantifications.append(quantification)
+
+    unknown_code_columns = [
+        col.removeprefix("code_")
+        for col in scen_data.columns
+        if col.startswith("code_") and col not in INTERVENTION_QUANTIFICATION_CLASSES
+    ]
+
+    for col in unknown_code_columns:
+        quantification = DefaultQuantification(
+            code=col, spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(quantification)
 
     # --- Intervention Costing & Final Assembly (Partner Guide: 4.4, 4.5, 4.6) ---
     if not all_quantifications:
