@@ -1,5 +1,14 @@
 import pandas as pd
-from typing import Dict, List
+from typing import Dict
+
+from .calculation_functions import (
+    ItnCampaignQuantification,
+    ItnRoutineQuantification,
+    IPTPQuantification,
+    PMCQuantification,
+    SMCQuantification,
+    VaccQuantification,
+)
 
 
 def generate_budget(
@@ -32,8 +41,6 @@ def generate_budget(
     Returns:
         A long-format DataFrame containing the detailed budget.
     """
-    # --- Environment & Inputs (Partner Guide: 4.1) ---
-    join_keys = [spatial_planning_unit] + ["year"]
 
     # --- Cost Data Prep (Partner Guide: 4.1) ---
     cost_data_clean = cost_data.dropna(subset=["local_currency_cost"]).copy()
@@ -51,212 +58,70 @@ def generate_budget(
         cost_data_expanded["cost_year_for_analysis"] == cost_data_expanded["year"]
     ]
 
-    def get_pop_column(label: str, default_col: List[str]) -> List[str]:
-        pop_assumption = assumptions.get(label)
-        if not pop_assumption:
-            return default_col
-        mapping = {
-            "Total population": ["pop_total"],
-            "Children under 5": ["pop_0_5"],
-            "Children under 5 and pregnant women": ["pop_0_5", "pop_pw"],
-            "Children under 10": ["pop_0_5", "pop_5_10"],
-            "Children 0-1": ["pop_0_1"],
-            "Children 1-2": ["pop_1_2"],
-            "Pregnant women": ["pop_pw"],
-        }
-        return mapping.get(str(pop_assumption), default_col)
-
-    itn_campaign_pop_col = get_pop_column(
-        "ITN Campaign: target population", ["pop_total"]
-    )
-    itn_routine_pop_col = get_pop_column(
-        "ITN Routine: target population", ["pop_0_5", "pop_pw"]
-    )
-    smc_pop_col = get_pop_column("SMC: target population", ["pop_0_5"])
-
     all_quantifications = []
 
     # --- Quantification by Intervention (Partner Guide: 4.3) ---
 
     # 4.3.1 ITN — Campaign
     if "code_itn_campaign" in scen_data.columns:
-        df = scen_data[scen_data["code_itn_campaign"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(
-                df,
-                target_population[list(set(join_keys + itn_campaign_pop_col))],
-                on=join_keys,
-            )
-            df["target_pop_raw"] = df[itn_campaign_pop_col].sum(axis=1)
-            df = df.assign(
-                quant_nets=(
-                    (df["target_pop_raw"] * assumptions["itn_campaign_coverage"])
-                    / assumptions["itn_campaign_divisor"]
-                )
-                * assumptions["itn_campaign_buffer_mult"],
-                target_pop=df["target_pop_raw"] * assumptions["itn_campaign_coverage"],
-                code_intervention="itn_campaign",
-                type_intervention=df["type_itn_campaign"],
-            ).assign(
-                quant_bales=lambda x: x.quant_nets
-                / assumptions["itn_campaign_bale_size"]
-            )
-            df_long = df.melt(
-                id_vars=[c for c in df.columns if not c.startswith("quant_")],
-                value_vars=["quant_nets", "quant_bales"],
-                var_name="unit",
-                value_name="quantity",
-            )
-            df_long["unit"] = df_long["unit"].map(
-                {"quant_nets": "per ITN", "quant_bales": "per bale"}
-            )
-            all_quantifications.append(df_long)
+        itn_campaign_quantification = ItnCampaignQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(itn_campaign_quantification)
 
     # 4.3.2 ITN — Routine
     if "code_itn_routine" in scen_data.columns:
-        df = scen_data[scen_data["code_itn_routine"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(
-                df,
-                target_population[list(set(join_keys + itn_routine_pop_col))],
-                on=join_keys,
-            )
-            df["target_pop"] = df[itn_routine_pop_col].sum(axis=1)
-            df = df.assign(
-                quantity=(df["target_pop"] * assumptions["itn_routine_coverage"])
-                * assumptions["itn_routine_buffer_mult"],
-                code_intervention="itn_routine",
-                type_intervention=df["type_itn_routine"],
-                unit="per ITN",
-            )
-            all_quantifications.append(df)
+        itn_routine_quantification = ItnRoutineQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+
+        all_quantifications.append(itn_routine_quantification)
 
     # 4.3.3 IPTp
     if "code_iptp" in scen_data.columns:
-        df = scen_data[scen_data["code_iptp"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(df, target_population[join_keys + ["pop_pw"]], on=join_keys)
-            df = df.assign(
-                quantity=(
-                    (df["pop_pw"] * assumptions["iptp_anc_coverage"])
-                    * assumptions["iptp_doses_per_pw"]
-                )
-                * assumptions["iptp_buffer_mult"],
-                target_pop=df["pop_pw"],
-                code_intervention="iptp",
-                type_intervention=df["type_iptp"],
-                unit="per SP",
-            )
-            all_quantifications.append(df)
+        iptp_quantification = IPTPQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(iptp_quantification)
 
     # 4.3.4 SMC
     if "code_smc" in scen_data.columns:
-        df = scen_data[scen_data["code_smc"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(
-                df, target_population[list(set(join_keys + smc_pop_col))], on=join_keys
-            )
-            df = df.assign(
-                quant_smc_3_11_months=(
-                    (df["pop_0_5"] * assumptions["smc_pop_prop_3_11"])
-                    * assumptions["smc_coverage"]
-                )
-                * assumptions["smc_monthly_rounds"]
-                * assumptions["smc_buffer_mult"],
-                quant_smc_12_59_months=(
-                    (df["pop_0_5"] * assumptions["smc_pop_prop_12_59"])
-                    * assumptions["smc_coverage"]
-                )
-                * assumptions["smc_monthly_rounds"]
-                * assumptions["smc_buffer_mult"],
-                target_pop=(
-                    df["pop_0_5"]
-                    * (
-                        assumptions["smc_pop_prop_3_11"]
-                        + assumptions["smc_pop_prop_12_59"]
-                    )
-                )
-                * assumptions["smc_coverage"],
-                code_intervention="smc",
-                type_intervention=df["type_smc"],
-            )
-            df_long = df.melt(
-                id_vars=[c for c in df.columns if not c.startswith("quant_")],
-                value_vars=["quant_smc_3_11_months", "quant_smc_12_59_months"],
-                var_name="unit",
-                value_name="quantity",
-            )
-            unit_map = {
-                "quant_smc_3_11_months": "per SPAQ pack 3-11 month olds",
-                "quant_smc_12_59_months": "per SPAQ pack 12-59 month olds",
-            }
-            df_long["unit"] = df_long["unit"].map(unit_map)
-            all_quantifications.append(df_long)
+        smc_quantification = SMCQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(smc_quantification)
 
     # 4.3.5 PMC
     if "code_pmc" in scen_data.columns:
-        df = scen_data[scen_data["code_pmc"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(
-                df, target_population[join_keys + ["pop_0_1", "pop_1_2"]], on=join_keys
-            )
-            sp_0_1 = (
-                df["pop_0_1"]
-                * assumptions["pmc_coverage"]
-                * assumptions["pmc_touchpoints"]
-                * 1
-                * assumptions["pmc_tablet_factor"]
-                * assumptions["pmc_buffer_mult"]
-            )
-            sp_1_2 = (
-                df["pop_1_2"]
-                * assumptions["pmc_coverage"]
-                * assumptions["pmc_touchpoints"]
-                * 2
-                * assumptions["pmc_tablet_factor"]
-                * assumptions["pmc_buffer_mult"]
-            )
-            df = df.assign(
-                quantity=sp_0_1 + sp_1_2,
-                target_pop=df["pop_0_1"] * assumptions["pmc_coverage"]
-                + df["pop_1_2"] * assumptions["pmc_coverage"],
-                code_intervention="pmc",
-                type_intervention=df["type_pmc"],
-                unit="per SP",
-            )
-            all_quantifications.append(df)
+        pmc_quantification = PMCQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(pmc_quantification)
 
     # 4.3.6 Vaccine
     if "code_vacc" in scen_data.columns:
-        df = scen_data[scen_data["code_vacc"] == 1].copy()
-        if not df.empty:
-            df = pd.merge(
-                df,
-                target_population[join_keys + ["pop_vaccine_5_36_months"]],
-                on=join_keys,
-            )
-            df = df.assign(
-                quant_doses=df["pop_vaccine_5_36_months"]
-                * assumptions["vacc_coverage"]
-                * assumptions["vacc_doses_per_child"]
-                * assumptions["vacc_buffer_mult"],
-                quant_child=df["pop_vaccine_5_36_months"]
-                * assumptions["vacc_coverage"],
-            ).assign(
-                target_pop=lambda x: x.quant_child,
-                code_intervention="vacc",
-                type_intervention=df["type_vacc"],
-            )
-            df_long = df.melt(
-                id_vars=[c for c in df.columns if not c.startswith("quant_")],
-                value_vars=["quant_doses", "quant_child"],
-                var_name="unit",
-                value_name="quantity",
-            )
-            df_long["unit"] = df_long["unit"].map(
-                {"quant_doses": "per dose", "quant_child": "per child"}
-            )
-            all_quantifications.append(df_long)
+        vacc_quantification = VaccQuantification(
+            spacial_unit=spatial_planning_unit, assumptions=assumptions
+        ).get_quantification(
+            scen_data,
+            target_population,
+        )
+        all_quantifications.append(vacc_quantification)
 
     # --- Intervention Costing & Final Assembly (Partner Guide: 4.4, 4.5, 4.6) ---
     if not all_quantifications:
