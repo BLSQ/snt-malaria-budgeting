@@ -14,15 +14,10 @@ class ItnCampaignQuantification(BaseQuantification):
         )
 
     def get_quantification(self, scen_data, target_population):
-        df = self.__get_base_df__(scen_data)
+        df = self.__get_base_df__(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        df = pd.merge(
-            df,
-            target_population[list(set(self.join_keys + self.pop_col))],
-            on=self.join_keys,
-        )
         df["target_pop_raw"] = df[self.pop_col].sum(axis=1)
 
         df = df.assign(

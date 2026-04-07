@@ -14,13 +14,9 @@ class PMCQuantification(BaseQuantification):
         )
 
     def get_quantification(self, scen_data, target_population):
-        df = self.__get_base_df__(scen_data)
+        df = self.__get_base_df__(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
-
-        df = pd.merge(
-            df, target_population[self.join_keys + self.pop_col], on=self.join_keys
-        )
 
         # TODO Loop through pop columns instead of hardcoding pop_0_1 and pop_1_2, and pass in the age groups as arguments instead of hardcoding them here.
         # TODO Not sure as we need to double the value if 1_2 since these children will receive 2 SP doses

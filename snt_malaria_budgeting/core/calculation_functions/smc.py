@@ -14,15 +14,9 @@ class SMCQuantification(BaseQuantification):
         )
 
     def get_quantification(self, scen_data, target_population):
-        df = self.__get_base_df__(scen_data)
+        df = self.__get_base_df__(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
-
-        df = pd.merge(
-            df,
-            target_population[list(set(self.join_keys + self.pop_col))],
-            on=self.join_keys,
-        )
         df = df.assign(
             quant_smc_3_11_months=(
                 (df["pop_0_5"] * self.assumptions[f"{self.code}_pop_prop_3_11"])

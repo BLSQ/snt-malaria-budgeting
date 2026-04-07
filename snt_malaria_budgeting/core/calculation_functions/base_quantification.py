@@ -1,5 +1,7 @@
 from typing import Dict, List
 
+import pandas as pd
+
 
 class BaseQuantification:
     def __init__(
@@ -20,8 +22,18 @@ class BaseQuantification:
     def get_quantification(self, scen_data, target_population, all_quantifications):
         raise NotImplementedError("Subclasses must implement this method")
 
-    def __get_base_df__(self, scen_data):
-        return scen_data[scen_data[f"code_{self.code}"] == 1].copy()
+    def __get_base_df__(self, scen_data, target_population):
+        df = scen_data[scen_data[f"code_{self.code}"] == 1].copy()
+        if df.empty:
+            return pd.DataFrame()
+
+        df = pd.merge(
+            df,
+            target_population[self.join_keys + self.pop_col],
+            on=self.join_keys,
+        )
+
+        return df
 
     # TODO: not sure this makes sense, only two of them are used and default is the same as mapping.
     def __get_pop_column__(

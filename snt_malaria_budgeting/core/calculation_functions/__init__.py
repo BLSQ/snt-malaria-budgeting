@@ -4,6 +4,7 @@ from .iptp import IPTPQuantification
 from .smc import SMCQuantification
 from .pmc import PMCQuantification
 from .vacc import VaccQuantification
+from .default_quantification import DefaultQuantification
 
 __all__ = [
     "ItnCampaignQuantification",
@@ -12,4 +13,5 @@ __all__ = [
     "SMCQuantification",
     "PMCQuantification",
     "VaccQuantification",
+    "DefaultQuantification",
 ]

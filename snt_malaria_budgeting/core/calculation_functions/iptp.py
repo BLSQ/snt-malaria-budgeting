@@ -14,12 +14,10 @@ class IPTPQuantification(BaseQuantification):
         )
 
     def get_quantification(self, scen_data, target_population):
-        df = self.__get_base_df__(scen_data)
+        df = self.__get_base_df__(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
-        df = pd.merge(
-            df, target_population[self.join_keys + self.pop_col], on=self.join_keys
-        )
+
         df = df.assign(
             quantity=(
                 (df["pop_pw"] * self.assumptions[f"{self.code}_anc_coverage"])
