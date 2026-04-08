@@ -3,7 +3,7 @@ from typing import Dict
 
 from snt_malaria_budgeting.models import MissingInterventionHandling
 
-from .calculation_functions import (
+from .quantification_functions import (
     ItnCampaignQuantification,
     ItnRoutineQuantification,
     IPTPQuantification,
