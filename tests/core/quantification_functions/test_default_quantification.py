@@ -47,7 +47,7 @@ class TestDefaultQuantification(unittest.TestCase):
                     "SMTH",
                 ],
                 "unit": [
-                    "none",
+                    "Other",
                 ],
                 "cost_class": ["Commodity"],
                 "cost_year_for_analysis": 2025,
@@ -86,7 +86,7 @@ class TestDefaultQuantification(unittest.TestCase):
         )
         self.assertEqual(result["code_intervention"].iloc[0], "something")
         self.assertEqual(result["type_intervention"].iloc[0], "SMTH")
-        self.assertEqual(result["unit"].iloc[0], "none")
+        self.assertEqual(result["unit"].iloc[0], "Other")
 
     def test_default_quantification_empty_base(self):
         """Test that DefaultQuantification returns an empty DataFrame when base data is empty."""

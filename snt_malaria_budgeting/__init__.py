@@ -10,7 +10,7 @@ from .models import (
     InterventionDetailModel,
     InterventionCostModel,
     CostItems,
-    MissingInterventionHandling,
+    UnknownInterventionHandling,
 )
 
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
     "InterventionDetailModel",
     "InterventionCostModel",
     "CostItems",
-    "MissingInterventionHandling",
+    "UnknownInterventionHandling",
 ]

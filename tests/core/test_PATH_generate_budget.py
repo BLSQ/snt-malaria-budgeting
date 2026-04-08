@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 from snt_malaria_budgeting.core.budget_calculator import generate_budget
-from snt_malaria_budgeting.models import MissingInterventionHandling
+from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 
 class TestGenerateBudget(unittest.TestCase):
@@ -159,7 +159,7 @@ class TestGenerateBudget(unittest.TestCase):
                     "per child",
                     "per dose",
                     "per child",
-                    "none",
+                    "Other",
                 ],
                 "cost_class": ["Commodity"] * 12,
                 "cost_year_for_analysis": 2025,
@@ -201,7 +201,7 @@ class TestGenerateBudget(unittest.TestCase):
         self,
         mock_read_excel,
         mock_read_csv,
-        missing_intervention_handling=MissingInterventionHandling.HANDLE,
+        unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
     ):
         """Helper method to run generate_budget with mocked file reads."""
         mock_read_excel.return_value = self.mock_population_data
@@ -213,7 +213,7 @@ class TestGenerateBudget(unittest.TestCase):
             target_population=self.mock_population_data,
             assumptions=self.settings,
             spatial_planning_unit="adm2",
-            missing_intervention_handling=missing_intervention_handling,
+            unknown_intervention_handling=unknown_intervention_handling,
         )
 
     def test_itn_campaign_quantification(self):
@@ -282,7 +282,7 @@ class TestGenerateBudget(unittest.TestCase):
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "cm_public"]
         self.assertAlmostEqual(
-            df[df["unit"] == "none"]["quantity"].iloc[0], 342988.7383 * 0.8, 2
+            df[df["unit"] == "Other"]["quantity"].iloc[0], 342988.7383 * 0.8, 2
         )
 
     def test_final_cost_calculation(self):
@@ -343,11 +343,11 @@ class TestGenerateBudget(unittest.TestCase):
         ]["cost_element"].sum()
         self.assertAlmostEqual(cm_cost, 126905.833171, 2)
 
-    def test_missing_intervention_handling(self):
+    def test_unknown_intervention_handling(self):
         """Verify that missing interventions are handled according to the specified setting."""
         # Run with HANDLE setting - should not raise an error and should return a budget with available interventions
         result_handle = self.run_generate_budget(
-            missing_intervention_handling=MissingInterventionHandling.HANDLE
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE
         )
         self.assertFalse(result_handle.empty)
         cm_cost_empty = result_handle[
@@ -358,12 +358,12 @@ class TestGenerateBudget(unittest.TestCase):
         # Run with ERROR setting - should raise a ValueError due to missing interventions
         with self.assertRaises(ValueError):
             self.run_generate_budget(
-                missing_intervention_handling=MissingInterventionHandling.ERROR
+                unknown_intervention_handling=UnknownInterventionHandling.ERROR
             )
 
         # Run with IGNORE setting - should not raise an error and should return a budget with available interventions, ignoring missing ones
         result_ignore = self.run_generate_budget(
-            missing_intervention_handling=MissingInterventionHandling.IGNORE
+            unknown_intervention_handling=UnknownInterventionHandling.IGNORE
         )
         self.assertFalse(result_ignore.empty)
         cm_cost_empty = result_ignore[

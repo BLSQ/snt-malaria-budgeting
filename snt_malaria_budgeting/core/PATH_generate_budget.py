@@ -1,7 +1,7 @@
 import pandas as pd
 from typing import Dict
 
-from snt_malaria_budgeting.models import MissingInterventionHandling
+from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 from .quantification_functions import (
     ItnCampaignQuantification,
@@ -30,7 +30,7 @@ def generate_budget(
     assumptions: Dict[str, float],
     spatial_planning_unit: str,
     local_currency_symbol: str = "NGN",
-    missing_intervention_handling: MissingInterventionHandling = MissingInterventionHandling.IGNORE,
+    unknown_intervention_handling: UnknownInterventionHandling = UnknownInterventionHandling.IGNORE,
 ) -> pd.DataFrame:
     """
     Generates a detailed intervention budget from scenarios & costs.
@@ -95,16 +95,16 @@ def generate_budget(
 
     if (
         unknown_code_columns
-        and missing_intervention_handling == MissingInterventionHandling.ERROR
+        and unknown_intervention_handling == UnknownInterventionHandling.ERROR
     ):
         raise ValueError(
             f"Unknown intervention code columns found in scen_data: {unknown_code_columns}. "
-            "Please add quantification logic for these interventions or adjust the missing_intervention_handling parameter."
+            "Please add quantification logic for these interventions or adjust the unknown_intervention_handling parameter."
         )
 
     if (
         unknown_code_columns
-        and missing_intervention_handling == MissingInterventionHandling.HANDLE
+        and unknown_intervention_handling == UnknownInterventionHandling.HANDLE
     ):
         print(
             f"Warning: Unknown intervention code columns found in scen_data: {unknown_code_columns}. "

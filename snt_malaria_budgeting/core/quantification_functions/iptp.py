@@ -54,5 +54,5 @@ class IPTPQuantification(BaseQuantification):
             target_pop=df[self.pop_col[0]],
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
-            unit="per SP",  # TODO Move this to the base class
+            unit="per SP",
         )

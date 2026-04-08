@@ -34,7 +34,7 @@ DEFAULT_COST_ASSUMPTIONS = {
 }
 
 
-class MissingInterventionHandling(str):
+class UnknownInterventionHandling(str):
     IGNORE = "ignore"
     ERROR = "error"
     HANDLE = "handle"
