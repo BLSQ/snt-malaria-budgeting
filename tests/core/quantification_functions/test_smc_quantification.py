@@ -8,16 +8,15 @@ from snt_malaria_budgeting.core.quantification_functions import (
 
 
 class TestSMCQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up mock dataframes and settings once for all tests."""
-        cls.settings = {}
+        self.settings = {}
 
         admin1 = "State A"
         admin2 = "LGA 1"
         year = 2025
 
-        cls.scen_data = pd.DataFrame(
+        self.scen_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -29,7 +28,7 @@ class TestSMCQuantification(unittest.TestCase):
             }
         )
 
-        cls.mock_population_data = pd.DataFrame(
+        self.mock_population_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -38,7 +37,7 @@ class TestSMCQuantification(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        self.cost_data = pd.DataFrame(
             {
                 "code_intervention": [
                     "SMC",
@@ -59,7 +58,7 @@ class TestSMCQuantification(unittest.TestCase):
         """Test that SMCQuantification returns expected results for a known code."""
 
         quant = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -108,7 +107,7 @@ class TestSMCQuantification(unittest.TestCase):
         ]
 
         quant = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -125,7 +124,7 @@ class TestSMCQuantification(unittest.TestCase):
         """Test that SMCQuantification uses default coverage when specific coverage assumption is missing."""
 
         quant_missing_coverage = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_buffer_mult": 1.1,
                 "smc_monthly_rounds": 1.5,
@@ -133,13 +132,15 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_12_59": 0.3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for smc: smc_coverage"
+        ):
             quant_missing_coverage.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_monthly_rounds = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -147,13 +148,15 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_12_59": 0.3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for smc: smc_monthly_rounds"
+        ):
             quant_missing_monthly_rounds.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_buffer_mult = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_monthly_rounds": 1.5,
@@ -161,13 +164,15 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_12_59": 0.3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for smc: smc_buffer_mult"
+        ):
             quant_missing_buffer_mult.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_prop_3_11 = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -175,13 +180,15 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_12_59": 0.3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for smc: smc_pop_prop_3_11"
+        ):
             quant_missing_prop_3_11.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_prop_12_59 = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -189,7 +196,9 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_3_11": 0.6,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for smc: smc_pop_prop_12_59"
+        ):
             quant_missing_prop_12_59.get_quantification(
                 self.scen_data, self.mock_population_data
             )
@@ -198,7 +207,7 @@ class TestSMCQuantification(unittest.TestCase):
         """Test that SMCQuantification returns empty DataFrame when code does not match any column in scen_data."""
 
         quant = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -215,7 +224,7 @@ class TestSMCQuantification(unittest.TestCase):
         """Test that SMCQuantification raises an error when population column is missing."""
 
         quant = SMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "smc_coverage": 0.5,
                 "smc_buffer_mult": 1.1,
@@ -224,5 +233,8 @@ class TestSMCQuantification(unittest.TestCase):
                 "smc_pop_prop_12_59": 0.3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Target population DataFrame must contain columns: \['adm2', 'year', 'pop_0_5'\]",
+        ):
             quant.get_quantification(self.scen_data, pd.DataFrame())

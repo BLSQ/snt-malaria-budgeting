@@ -6,8 +6,7 @@ from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 
 class TestGenerateBudget(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         """Set up mock dataframes and settings once for all tests."""
         # cls.settings = MockCostSettings()
         cls.settings = {}
@@ -208,8 +207,8 @@ class TestGenerateBudget(unittest.TestCase):
         mock_read_csv.return_value = self.mock_cm_data
 
         return generate_budget(
-            scen_data=self.scen_data,
-            cost_data=self.cost_data,
+            scen_df=self.scen_data,
+            cost_df=self.cost_data,
             target_population=self.mock_population_data,
             assumptions=self.settings,
             spatial_planning_unit="adm2",
@@ -282,7 +281,7 @@ class TestGenerateBudget(unittest.TestCase):
         result = self.run_generate_budget()
         df = result[result["code_intervention"] == "cm_public"]
         self.assertAlmostEqual(
-            df[df["unit"] == "Other"]["quantity"].iloc[0], 342988.7383 * 0.8, 2
+            df[df["unit"] == "Other"]["quantity"].iloc[0], 342988.7383 * 1, 2
         )
 
     def test_final_cost_calculation(self):
@@ -337,11 +336,11 @@ class TestGenerateBudget(unittest.TestCase):
         ]["cost_element"].sum()
         self.assertAlmostEqual(pmc_cost, 23595.0956, 2)
 
-        # Case management: 342988.7383 cases * 0.8 coverage * $0.4625/case = $126,860.7125
+        # Case management: 342988.7383 cases * 1 coverage * $0.4625/case = $158632.29146375
         cm_cost = result[
             (result["code_intervention"] == "cm_public") & (result["currency"] == "USD")
         ]["cost_element"].sum()
-        self.assertAlmostEqual(cm_cost, 126905.833171, 2)
+        self.assertAlmostEqual(cm_cost, 158632.29146375, 2)
 
     def test_unknown_intervention_handling(self):
         """Verify that missing interventions are handled according to the specified setting."""
@@ -390,6 +389,34 @@ class TestGenerateBudget(unittest.TestCase):
         present_interventions = result["code_intervention"].unique()
         for intervention in expected_interventions:
             self.assertIn(intervention, present_interventions)
+
+    def test_empty_cost_data_handling(self):
+        """Verify that the function handles empty cost data gracefully."""
+        # Create an empty cost DataFrame
+        empty_cost_df = pd.DataFrame(
+            columns=[
+                "code_intervention",
+                "type_intervention",
+                "unit",
+                "cost_class",
+                "cost_year_for_analysis",
+                "usd_cost",
+                "local_currency_cost",
+                "cost_name",
+            ]
+        )
+
+        # Run generate_budget with empty cost data
+        result = generate_budget(
+            scen_df=self.scen_data,
+            cost_df=empty_cost_df,
+            target_population=self.mock_population_data,
+            assumptions=self.settings,
+            spatial_planning_unit="adm2",
+        )
+
+        # The result should be an empty DataFrame since there are no costs to calculate
+        self.assertTrue(result.empty)
 
 
 if __name__ == "__main__":

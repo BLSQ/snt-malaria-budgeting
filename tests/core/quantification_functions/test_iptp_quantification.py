@@ -6,16 +6,15 @@ from snt_malaria_budgeting.core.quantification_functions import IPTPQuantificati
 
 
 class TestIPTPQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up mock dataframes and settings once for all tests."""
-        cls.settings = {}
+        self.settings = {}
 
         admin1 = "State A"
         admin2 = "LGA 1"
         year = 2025
 
-        cls.scen_data = pd.DataFrame(
+        self.scen_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -27,7 +26,7 @@ class TestIPTPQuantification(unittest.TestCase):
             }
         )
 
-        cls.mock_population_data = pd.DataFrame(
+        self.mock_population_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -36,7 +35,7 @@ class TestIPTPQuantification(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        self.cost_data = pd.DataFrame(
             {
                 "code_intervention": [
                     "iptp",
@@ -63,7 +62,7 @@ class TestIPTPQuantification(unittest.TestCase):
         """Test that IPTPQuantification returns expected results for a known code."""
 
         quant = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_doses_per_pw": 1.5,
@@ -98,7 +97,7 @@ class TestIPTPQuantification(unittest.TestCase):
         ]
 
         quant = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_doses_per_pw": 1,
@@ -113,37 +112,43 @@ class TestIPTPQuantification(unittest.TestCase):
         """Test that IPTPQuantification uses default coverage when specific coverage assumption is missing."""
 
         quant_missing_anc = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_doses_per_pw": 1,
                 "iptp_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for iptp: iptp_anc_coverage"
+        ):
             quant_missing_anc.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_doses = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for iptp: iptp_doses_per_pw"
+        ):
             quant_missing_doses.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_buffer = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_doses_per_pw": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for iptp: iptp_buffer_mult"
+        ):
             quant_missing_buffer.get_quantification(
                 self.scen_data, self.mock_population_data
             )
@@ -152,7 +157,7 @@ class TestIPTPQuantification(unittest.TestCase):
         """Test that IPTPQuantification returns empty DataFrame when code does not match any column in scen_data."""
 
         quant = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_doses_per_pw": 1,
@@ -167,12 +172,15 @@ class TestIPTPQuantification(unittest.TestCase):
         """Test that IPTPQuantification raises an error when population column is missing."""
 
         quant = IPTPQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "iptp_anc_coverage": 0.5,
                 "iptp_doses_per_pw": 1,
                 "iptp_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Target population DataFrame must contain columns: \['adm2', 'year', 'pop_pw'\]",
+        ):
             quant.get_quantification(self.scen_data, pd.DataFrame())

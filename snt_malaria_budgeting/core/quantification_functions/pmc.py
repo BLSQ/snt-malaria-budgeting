@@ -4,10 +4,10 @@ from .base_quantification import BaseQuantification
 
 
 class PMCQuantification(BaseQuantification):
-    def __init__(self, spacial_unit, assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
             "pmc",
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="PMC: target population",
             default_pop_col=["pop_0_1", "pop_1_2"],
@@ -42,11 +42,11 @@ class PMCQuantification(BaseQuantification):
             - Calculations include coverage, touchpoints, tablet_factor, and buffer multiplier assumptions
         """
 
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         pop_0_1 = df[self.pop_col[0]]
         pop_1_2 = df[self.pop_col[1]]

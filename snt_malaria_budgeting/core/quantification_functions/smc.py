@@ -4,10 +4,10 @@ from .base_quantification import BaseQuantification
 
 
 class SMCQuantification(BaseQuantification):
-    def __init__(self, spacial_unit, assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
             "smc",
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="SMC: target population",
             default_pop_col=["pop_0_5"],
@@ -57,11 +57,11 @@ class SMCQuantification(BaseQuantification):
         - Buffer multiplier for safety stock
         """
 
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         df = df.assign(
             quant_smc_3_11_months=(

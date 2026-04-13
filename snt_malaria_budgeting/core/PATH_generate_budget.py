@@ -24,8 +24,8 @@ INTERVENTION_QUANTIFICATION_CLASSES = {
 
 
 def generate_budget(
-    scen_data: pd.DataFrame,
-    cost_data: pd.DataFrame,
+    scen_df: pd.DataFrame,
+    cost_df: pd.DataFrame,
     target_population: pd.DataFrame,
     assumptions: Dict[str, float],
     spatial_planning_unit: str,
@@ -41,13 +41,13 @@ def generate_budget(
     long-form budget dataset.
 
     Args:
-        scen_data: DataFrame of implementation scenarios, from the 'Scenario template'.
-        cost_data: DataFrame of unit costs, from the 'Unit Cost template'.
+        scen_df: DataFrame of implementation scenarios, from the 'Scenario template'.
+        cost_df: DataFrame of unit costs, from the 'Unit Cost template'.
         target_population: DataFrame with population data by SPU and year.
         assumptions: Dictionary of overrides for default parameters.
         spatial_planning_unit:
             The identifier of the spatial planning unit, i.e. the join key to match
-            the scen_data on the target_population dataframes.
+            the scen_df on the target_population dataframes.
             This can be a database ID, DHIS reference, combination of adm1 and adm2, etc.
         local_currency_symbol: Symbol for the local currency (e.g., "NGN").
 
@@ -56,19 +56,19 @@ def generate_budget(
     """
 
     # --- Cost Data Prep (Partner Guide: 4.1) ---
-    cost_data_clean = cost_data.dropna(subset=["local_currency_cost"]).copy()
-    cost_data_clean["cost_year_for_analysis"] = pd.to_numeric(
-        cost_data_clean["cost_year_for_analysis"], errors="coerce"
+    cost_df_clean = cost_df.dropna(subset=["local_currency_cost"]).copy()
+    cost_df_clean["cost_year_for_analysis"] = pd.to_numeric(
+        cost_df_clean["cost_year_for_analysis"], errors="coerce"
     )
 
-    unique_years = scen_data[["year"]].drop_duplicates()
-    cost_data_expanded = pd.merge(unique_years, cost_data_clean, how="cross")
+    unique_years = scen_df[["year"]].drop_duplicates()
+    cost_df_expanded = pd.merge(unique_years, cost_df_clean, how="cross")
 
-    cost_data_expanded["cost_year_for_analysis"] = cost_data_expanded[
+    cost_df_expanded["cost_year_for_analysis"] = cost_df_expanded[
         "cost_year_for_analysis"
-    ].fillna(cost_data_expanded["year"])
-    cost_data_expanded = cost_data_expanded[
-        cost_data_expanded["cost_year_for_analysis"] == cost_data_expanded["year"]
+    ].fillna(cost_df_expanded["year"])
+    cost_df_expanded = cost_df_expanded[
+        cost_df_expanded["cost_year_for_analysis"] == cost_df_expanded["year"]
     ]
 
     all_quantifications = []
@@ -78,18 +78,18 @@ def generate_budget(
         code_column,
         quantification_class,
     ) in INTERVENTION_QUANTIFICATION_CLASSES.items():
-        if code_column in scen_data.columns:
+        if code_column in scen_df.columns:
             quantification = quantification_class(
-                spacial_unit=spatial_planning_unit, assumptions=assumptions
+                spatial_unit=spatial_planning_unit, assumptions=assumptions
             ).get_quantification(
-                scen_data,
+                scen_df,
                 target_population,
             )
             all_quantifications.append(quantification)
 
     unknown_code_columns = [
         col.removeprefix("code_")
-        for col in scen_data.columns
+        for col in scen_df.columns
         if col.startswith("code_") and col not in INTERVENTION_QUANTIFICATION_CLASSES
     ]
 
@@ -98,7 +98,7 @@ def generate_budget(
         and unknown_intervention_handling == UnknownInterventionHandling.ERROR
     ):
         raise ValueError(
-            f"Unknown intervention code columns found in scen_data: {unknown_code_columns}. "
+            f"Unknown intervention code columns found in scen_df: {unknown_code_columns}. "
             "Please add quantification logic for these interventions or adjust the unknown_intervention_handling parameter."
         )
 
@@ -107,15 +107,15 @@ def generate_budget(
         and unknown_intervention_handling == UnknownInterventionHandling.HANDLE
     ):
         print(
-            f"Warning: Unknown intervention code columns found in scen_data: {unknown_code_columns}. "
+            f"Warning: Unknown intervention code columns found in scen_df: {unknown_code_columns}. "
             "Using default quantification for these interventions."
         )
 
         for col in unknown_code_columns:
             quantification = DefaultQuantification(
-                code=col, spacial_unit=spatial_planning_unit, assumptions=assumptions
+                code=col, spatial_unit=spatial_planning_unit, assumptions=assumptions
             ).get_quantification(
-                scen_data,
+                scen_df,
                 target_population,
             )
             all_quantifications.append(quantification)
@@ -126,9 +126,12 @@ def generate_budget(
 
     budget = pd.concat(all_quantifications, ignore_index=True, sort=False)
 
+    if budget.empty or cost_df_expanded.empty:
+        return pd.DataFrame()
+
     budget = pd.merge(
         budget,
-        cost_data_expanded.drop(columns=["year"]),
+        cost_df_expanded.drop(columns=["year"]),
         left_on=["code_intervention", "type_intervention", "unit", "year"],
         right_on=[
             "code_intervention",
@@ -153,8 +156,8 @@ def generate_budget(
         {"local_currency_cost": local_currency_symbol, "usd_cost": "USD"}
     )
 
-    fixed_budget = cost_data_expanded[
-        cost_data_expanded["type_intervention"] == "Fixed cost"
+    fixed_budget = cost_df_expanded[
+        cost_df_expanded["type_intervention"] == "Fixed cost"
     ].copy()
     if not fixed_budget.empty:
         fixed_budget = fixed_budget.melt(

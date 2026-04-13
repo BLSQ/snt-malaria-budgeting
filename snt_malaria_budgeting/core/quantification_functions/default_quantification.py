@@ -4,10 +4,10 @@ from .base_quantification import BaseQuantification
 
 
 class DefaultQuantification(BaseQuantification):
-    def __init__(self, code, spacial_unit, assumptions={}):
+    def __init__(self, code, spatial_unit, assumptions={}):
         super().__init__(
             code,
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             default_pop_col=["pop_total"],
         )
@@ -37,12 +37,12 @@ class DefaultQuantification(BaseQuantification):
               falling back to "default_coverage" (default: 0.8) if not found.
             - The unit field defaults to "none" and is used internally for cost class determination.
         """
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
         coverage = self.assumptions.get(
-            f"{self.code}_coverage", self.assumptions.get("default_coverage", 0.8)
+            f"{self.code}_coverage", self.assumptions.get("default_coverage", 1)
         )
 
         return df.assign(

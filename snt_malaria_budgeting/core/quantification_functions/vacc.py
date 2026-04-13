@@ -6,10 +6,10 @@ from snt_malaria_budgeting.core.quantification_functions.base_quantification imp
 
 
 class VaccQuantification(BaseQuantification):
-    def __init__(self, spacial_unit, assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
             "vacc",
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="Vaccine: target population",
             default_pop_col=["pop_vaccine_5_36_months"],
@@ -44,11 +44,11 @@ class VaccQuantification(BaseQuantification):
             - Buffer multiplier accounts for waste and contingency in dose calculations
         """
 
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         df = df.assign(
             quant_doses=df[self.pop_col[0]]

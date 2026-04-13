@@ -8,8 +8,7 @@ from snt_malaria_budgeting.core.quantification_functions.default_quantification 
 
 
 class TestDefaultQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         """Set up mock dataframes and settings once for all tests."""
         cls.settings = {}
 
@@ -66,7 +65,7 @@ class TestDefaultQuantification(unittest.TestCase):
 
         quant = DefaultQuantification(
             code="something",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={"something_coverage": 0.5},
         )
         result = quant.get_quantification(self.scen_data, self.mock_population_data)
@@ -98,7 +97,7 @@ class TestDefaultQuantification(unittest.TestCase):
 
         quant = DefaultQuantification(
             code="something",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={"something_coverage": 0.5},
         )
         result = quant.get_quantification(empty_scen_data, empty_population_data)
@@ -110,7 +109,7 @@ class TestDefaultQuantification(unittest.TestCase):
 
         quant = DefaultQuantification(
             code="something",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={"default_coverage": 0.3},
         )
         result = quant.get_quantification(self.scen_data, self.mock_population_data)
@@ -121,16 +120,16 @@ class TestDefaultQuantification(unittest.TestCase):
         self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
 
     def test_default_quantification_no_coverage_assumption_no_default(self):
-        """Test that DefaultQuantification uses 0.8 as default coverage when no specific or default coverage assumption is provided."""
+        """Test that DefaultQuantification uses 1 as default coverage when no specific or default coverage assumption is provided."""
 
         quant = DefaultQuantification(
             code="something",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={},
         )
         result = quant.get_quantification(self.scen_data, self.mock_population_data)
 
-        expected_quantity = self.mock_population_data["pop_total"][0] * 0.8
+        expected_quantity = self.mock_population_data["pop_total"][0] * 1
 
         self.assertEqual(len(result), 1)
         self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
@@ -140,7 +139,7 @@ class TestDefaultQuantification(unittest.TestCase):
 
         quant = DefaultQuantification(
             code="unknown_code",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={"unknown_code_coverage": 0.5},
         )
         result = quant.get_quantification(self.scen_data, self.mock_population_data)
@@ -152,7 +151,7 @@ class TestDefaultQuantification(unittest.TestCase):
 
         quant = DefaultQuantification(
             code="something",
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={"something_coverage": 0.5},
         )
         with self.assertRaises(ValueError):

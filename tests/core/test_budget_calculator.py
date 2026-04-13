@@ -37,6 +37,35 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
+    def test_get_budget_no_costs(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": [2025],
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions,
+            DEFAULT_COST_ASSUMPTIONS,
+            cost_df,
+            self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+        interventions_costs = budget_calculator.get_interventions_costs(2024)
+        places_costs = budget_calculator.get_places_costs(2024)
+        self.assertEqual(len(interventions_costs), 0)
+        self.assertEqual(len(places_costs), 0)
+
     def test_get_budget_use_default_currency(self):
         interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
         cost_df = pd.DataFrame(

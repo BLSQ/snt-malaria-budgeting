@@ -3,16 +3,16 @@ from .base_quantification import BaseQuantification
 
 
 class ItnRoutineQuantification(BaseQuantification):
-    def __init__(self, code="itn_routine", spacial_unit="adm1", assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
-            code,
-            spacial_unit,
+            "itn_routine",
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="ITN Routine: target population",
             default_pop_col=["pop_0_5", "pop_pw"],
             required_assumptions=[
-                f"{code}_coverage",
-                f"{code}_buffer_mult",
+                "itn_routine_coverage",
+                "itn_routine_buffer_mult",
             ],
         )
 
@@ -52,11 +52,11 @@ class ItnRoutineQuantification(BaseQuantification):
 
         # --- Quantification (Partner Guide: 4.3) ---
         # Get population of interest (e.g., children under 5 or pregnant
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         df["target_pop"] = df[self.pop_col].sum(axis=1)
         return df.assign(

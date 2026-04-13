@@ -8,16 +8,15 @@ from snt_malaria_budgeting.core.quantification_functions import (
 
 
 class TestVaccQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up mock dataframes and settings once for all tests."""
-        cls.settings = {}
+        self.settings = {}
 
         admin1 = "State A"
         admin2 = "LGA 1"
         year = 2025
 
-        cls.scen_data = pd.DataFrame(
+        self.scen_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -31,7 +30,7 @@ class TestVaccQuantification(unittest.TestCase):
             }
         )
 
-        cls.mock_population_data = pd.DataFrame(
+        self.mock_population_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -40,7 +39,7 @@ class TestVaccQuantification(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        self.cost_data = pd.DataFrame(
             {
                 "code_intervention": [
                     "vacc",
@@ -63,7 +62,7 @@ class TestVaccQuantification(unittest.TestCase):
         """Test that VaccQuantification returns expected results for a known code."""
 
         quant = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_buffer_mult": 1.1,
@@ -108,7 +107,7 @@ class TestVaccQuantification(unittest.TestCase):
         ]
 
         quant = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_buffer_mult": 1.1,
@@ -123,38 +122,44 @@ class TestVaccQuantification(unittest.TestCase):
         """Test that VaccQuantification uses default coverage when specific coverage assumption is missing."""
 
         quant_missing_coverage = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_buffer_mult": 1.1,
                 "vacc_doses_per_child": 3,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for vacc: vacc_coverage"
+        ):
             quant_missing_coverage.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_buffer_mult = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_doses_per_child": 3,
             },
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for vacc: vacc_buffer_mult"
+        ):
             quant_missing_buffer_mult.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_dose_per_child = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_buffer_mult": 1.1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for vacc: vacc_doses_per_child"
+        ):
             quant_missing_dose_per_child.get_quantification(
                 self.scen_data, self.mock_population_data
             )
@@ -163,7 +168,7 @@ class TestVaccQuantification(unittest.TestCase):
         """Test that VaccQuantification returns empty DataFrame when code does not match any column in scen_data."""
 
         quant = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_buffer_mult": 1,
@@ -178,11 +183,14 @@ class TestVaccQuantification(unittest.TestCase):
         """Test that VaccQuantification raises an error when population column is missing."""
 
         quant = VaccQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "vacc_coverage": 0.5,
                 "vacc_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Target population DataFrame must contain columns: \['adm2', 'year', 'pop_vaccine_5_36_months'\]",
+        ):
             quant.get_quantification(self.scen_data, pd.DataFrame())

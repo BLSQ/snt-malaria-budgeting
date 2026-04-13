@@ -41,14 +41,14 @@ class BudgetCalculator:
         if year in self.budgets:
             return self.budgets.get(year)
 
-        scen_data = self._get_scenario_data(year)
+        scen_df = self._get_scenario_dataframe(year)
         self._merge_cost_overrides()
         self._normalize_cost_dataframe()
         costs_for_year = self.cost_df[self.cost_df["cost_year_for_analysis"] == year]
         pop_for_year = self.population_df[self.population_df["year"] == year]
         budget = generate_budget(
-            scen_data=scen_data,
-            cost_data=costs_for_year,
+            scen_df=scen_df,
+            cost_df=costs_for_year,
             target_population=pop_for_year,
             assumptions=self.settings,
             spatial_planning_unit=self.spatial_planning_unit,
@@ -180,7 +180,7 @@ class BudgetCalculator:
 
         return place_costs
 
-    def _set_intervention_scen_data(self, budget_code, interventions, scen_data):
+    def _set_intervention_scen_data(self, budget_code, interventions, scen_df):
         code_column = f"code_{budget_code}"
         type_column = f"type_{budget_code}"
 
@@ -189,19 +189,19 @@ class BudgetCalculator:
             intervention_type = intervention.type
 
             # Use vectorized operations instead of apply()
-            mask = scen_data[self.spatial_planning_unit].isin(intervention_places)
-            scen_data.loc[mask, code_column] = 1
-            scen_data.loc[mask, type_column] = intervention_type
+            mask = scen_df[self.spatial_planning_unit].isin(intervention_places)
+            scen_df.loc[mask, code_column] = 1
+            scen_df.loc[mask, type_column] = intervention_type
 
-    def _get_scenario_data(
+    def _get_scenario_dataframe(
         self,
         year: int,
     ):
         ######################################
         # Convert from json input to dataframe
         ######################################
-        scen_data = pd.DataFrame(self.places, columns=[self.spatial_planning_unit])
-        scen_data["year"] = year  # Set a default year for the scenario
+        scen_df = pd.DataFrame(self.places, columns=[self.spatial_planning_unit])
+        scen_df["year"] = year  # Set a default year for the scenario
 
         #################################################################################
         # Set intervention code and type base on intervention's places from input for all
@@ -212,16 +212,17 @@ class BudgetCalculator:
         interventions_by_code = {}
         budget_codes = set()
         for intervention in self.interventions_input:
-            if intervention.code not in interventions_by_code:
-                interventions_by_code[intervention.code] = []
-                budget_codes.add(intervention.code)
-            interventions_by_code[intervention.code].append(intervention)
+            code = intervention.code
+            if code not in interventions_by_code:
+                interventions_by_code[code] = []
+                budget_codes.add(code)
+            interventions_by_code[code].append(intervention)
 
         for budget_code in budget_codes:
             interventions = interventions_by_code.get(budget_code, [])
-            self._set_intervention_scen_data(budget_code, interventions, scen_data)
+            self._set_intervention_scen_data(budget_code, interventions, scen_df)
 
-        return scen_data
+        return scen_df
 
     def _merge_cost_overrides(
         self,

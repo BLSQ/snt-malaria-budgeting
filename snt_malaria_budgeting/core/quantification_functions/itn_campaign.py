@@ -3,10 +3,10 @@ from .base_quantification import BaseQuantification
 
 
 class ItnCampaignQuantification(BaseQuantification):
-    def __init__(self, spacial_unit, assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
             "itn_campaign",
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="ITN Campaign: target population",
             default_pop_col=["pop_total"],
@@ -43,11 +43,11 @@ class ItnCampaignQuantification(BaseQuantification):
             - Uses assumption keys: `{code}_coverage`, `{code}_divisor`, `{code}_buffer_mult`, `{code}_bale_size`
         """
 
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         target_pop_raw = df[self.pop_col].sum(axis=1)
 

@@ -8,16 +8,15 @@ from snt_malaria_budgeting.core.quantification_functions import (
 
 
 class TestPMCQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up mock dataframes and settings once for all tests."""
-        cls.settings = {}
+        self.settings = {}
 
         admin1 = "State A"
         admin2 = "LGA 1"
         year = 2025
 
-        cls.scen_data = pd.DataFrame(
+        self.scen_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -29,7 +28,7 @@ class TestPMCQuantification(unittest.TestCase):
             }
         )
 
-        cls.mock_population_data = pd.DataFrame(
+        self.mock_population_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -39,7 +38,7 @@ class TestPMCQuantification(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        self.cost_data = pd.DataFrame(
             {
                 "code_intervention": [
                     "pmc",
@@ -60,7 +59,7 @@ class TestPMCQuantification(unittest.TestCase):
         """Test that PMCQuantification returns expected results for a known code."""
 
         quant = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
@@ -101,7 +100,7 @@ class TestPMCQuantification(unittest.TestCase):
         ]
 
         quant = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
@@ -117,53 +116,61 @@ class TestPMCQuantification(unittest.TestCase):
         """Test that PMCQuantification uses default coverage when specific coverage assumption is missing."""
 
         quant_missing_coverage = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_touchpoints": 1.5,
                 "pmc_tablet_factor": 1.1,
                 "pmc_buffer_mult": 1.1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for pmc: pmc_coverage"
+        ):
             quant_missing_coverage.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_touchpoints = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_tablet_factor": 1.1,
                 "pmc_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for pmc: pmc_touchpoints"
+        ):
             quant_missing_touchpoints.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_tablet_factor = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
                 "pmc_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for pmc: pmc_tablet_factor"
+        ):
             quant_missing_tablet_factor.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_buffer = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
                 "pmc_tablet_factor": 1.1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for pmc: pmc_buffer_mult"
+        ):
             quant_missing_buffer.get_quantification(
                 self.scen_data, self.mock_population_data
             )
@@ -172,7 +179,7 @@ class TestPMCQuantification(unittest.TestCase):
         """Test that PMCQuantification returns empty DataFrame when code does not match any column in scen_data."""
 
         quant = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
@@ -188,7 +195,7 @@ class TestPMCQuantification(unittest.TestCase):
         """Test that PMCQuantification raises an error when population column is missing."""
 
         quant = PMCQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "pmc_coverage": 0.5,
                 "pmc_touchpoints": 1.5,
@@ -196,5 +203,8 @@ class TestPMCQuantification(unittest.TestCase):
                 "pmc_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Target population DataFrame must contain columns: \['adm2', 'year', 'pop_0_1', 'pop_1_2'\]",
+        ):
             quant.get_quantification(self.scen_data, pd.DataFrame())

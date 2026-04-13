@@ -8,16 +8,15 @@ from snt_malaria_budgeting.core.quantification_functions import (
 
 
 class TestItnRoutineQuantification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up mock dataframes and settings once for all tests."""
-        cls.settings = {}
+        self.settings = {}
 
         admin1 = "State A"
         admin2 = "LGA 1"
         year = 2025
 
-        cls.scen_data = pd.DataFrame(
+        self.scen_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -31,7 +30,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
             }
         )
 
-        cls.mock_population_data = pd.DataFrame(
+        self.mock_population_data = pd.DataFrame(
             {
                 "adm1": [admin1],
                 "adm2": [admin2],
@@ -41,7 +40,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
             }
         )
 
-        cls.cost_data = pd.DataFrame(
+        self.cost_data = pd.DataFrame(
             {
                 "code_intervention": [
                     "itn_routine",
@@ -62,7 +61,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
         """Test that ItnRoutineQuantification returns expected results for a known code."""
 
         quant = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_coverage": 0.5,
                 "itn_routine_buffer_mult": 1.1,
@@ -106,7 +105,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
         ]
 
         quant = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_coverage": 0.5,
                 "itn_routine_buffer_mult": 1,
@@ -120,23 +119,27 @@ class TestItnRoutineQuantification(unittest.TestCase):
         """Test that ItnRoutineQuantification uses default coverage when specific coverage assumption is missing."""
 
         quant_missing_coverage = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for itn_routine: itn_routine_coverage"
+        ):
             quant_missing_coverage.get_quantification(
                 self.scen_data, self.mock_population_data
             )
 
         quant_missing_buffer_mult = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_coverage": 0.5,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, r"Missing assumptions for itn_routine: itn_routine_buffer_mult"
+        ):
             quant_missing_buffer_mult.get_quantification(
                 self.scen_data, self.mock_population_data
             )
@@ -145,7 +148,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
         """Test that ItnRoutineQuantification returns empty DataFrame when code does not match any column in scen_data."""
 
         quant = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_coverage": 0.5,
                 "itn_routine_buffer_mult": 1,
@@ -159,11 +162,14 @@ class TestItnRoutineQuantification(unittest.TestCase):
         """Test that ItnRoutineQuantification raises an error when population column is missing."""
 
         quant = ItnRoutineQuantification(
-            spacial_unit="adm2",
+            spatial_unit="adm2",
             assumptions={
                 "itn_routine_coverage": 0.5,
                 "itn_routine_buffer_mult": 1,
             },
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Target population DataFrame must contain columns: \['adm2', 'year', 'pop_0_5', 'pop_pw'\]",
+        ):
             quant.get_quantification(self.scen_data, pd.DataFrame())

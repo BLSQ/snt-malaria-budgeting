@@ -11,16 +11,16 @@ class BaseQuantification:
     def __init__(
         self,
         code,
-        spacial_unit="adm1",
+        spatial_unit="adm1",
         assumptions={},
         label_pop_col="Total population",
         default_pop_col=["pop_total"],
         required_assumptions=[],
     ):
         self.code = code
-        self.join_keys = [spacial_unit] + ["year"]
+        self.join_keys = [spatial_unit] + ["year"]
         self.assumptions = assumptions
-        self.pop_col = self.__get_pop_column__(
+        self.pop_col = self._get_pop_column_(
             label_pop_col, default_pop_col, assumptions=assumptions
         )
         self.required_assumptions = required_assumptions
@@ -28,7 +28,7 @@ class BaseQuantification:
     def get_quantification(self, scen_data, target_population, all_quantifications):
         raise NotImplementedError("Subclasses must implement this method")
 
-    def __get_base_df__(self, scen_data, target_population):
+    def _get_base_df_(self, scen_data, target_population):
         if f"code_{self.code}" not in scen_data.columns:
             return pd.DataFrame()
 
@@ -51,7 +51,7 @@ class BaseQuantification:
 
         return df
 
-    def __validate_assumptions__(self):
+    def _validate_assumptions_(self):
         missing_assumptions = [
             assumption
             for assumption in self.required_assumptions
@@ -69,7 +69,7 @@ class BaseQuantification:
     # IMO we should just directly pass the pop columns we want to use as assumptions, and not have this mapping at all.
     # This will be more flexible and less error prone.
     # We can still have a default value if the assumption is not provided, but it should be the actual column name(s) in the pop DF, not some label that we then need to map to column names.
-    def __get_pop_column__(
+    def _get_pop_column_(
         self, label: str, default_col: List[str], assumptions: Dict[str, float]
     ) -> List[str]:
         pop_assumption = assumptions.get(label)

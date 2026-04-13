@@ -4,10 +4,10 @@ from .base_quantification import BaseQuantification
 
 
 class IPTPQuantification(BaseQuantification):
-    def __init__(self, spacial_unit, assumptions={}):
+    def __init__(self, spatial_unit, assumptions={}):
         super().__init__(
             "iptp",
-            spacial_unit,
+            spatial_unit,
             assumptions=assumptions,
             label_pop_col="IPTp: target population",
             default_pop_col=["pop_pw"],
@@ -39,11 +39,11 @@ class IPTPQuantification(BaseQuantification):
 
             Returns an empty DataFrame if base data is empty.
         """
-        df = self.__get_base_df__(scen_data, target_population)
+        df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self.__validate_assumptions__()
+        self._validate_assumptions_()
 
         return df.assign(
             quantity=(
