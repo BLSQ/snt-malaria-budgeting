@@ -1,0 +1,77 @@
+import pandas as pd
+
+from .base_quantification import BaseQuantification
+
+
+class PMCQuantification(BaseQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__(
+            "pmc",
+            spatial_unit,
+            assumptions=assumptions,
+            label_pop_col="PMC: target population",
+            default_pop_col=["pop_0_1", "pop_1_2"],
+            required_assumptions=[
+                "pmc_coverage",
+                "pmc_touchpoints",
+                "pmc_tablet_factor",
+                "pmc_buffer_mult",
+            ],
+        )
+
+    def get_quantification(self, scen_data, target_population):
+        """
+        Calculate the quantification of preventive medicine doses for malaria-affected populations.
+        This method computes the required quantity of seasonal preventive chemotherapy (SP) tablets
+        based on population segments (children 0-1 years and 1-2 years), coverage rates, touchpoints,
+        and dosage factors.
+        Args:
+            scen_data: Dictionary containing scenario-specific data for quantification calculations.
+            target_population: The target population data used to filter and process the base dataframe.
+        Returns:
+            pd.DataFrame: A dataframe with the following columns:
+                - quantity: Total number of SP tablets required (sum of sp_0_1 and sp_1_2)
+                - target_pop: Target population reached (covered population for both age groups)
+                - code_intervention: Code identifier for this intervention (self.code)
+                - type_intervention: Type of intervention from the scenario data
+                - unit: Unit of measurement ("per SP")
+            Returns an empty DataFrame if the base dataframe is empty.
+        Notes:
+            - Children 0-1 years receive 1 dose per touchpoint (sp_0_1)
+            - Children 1-2 years receive 2 doses per touchpoint (sp_1_2)
+            - Calculations include coverage, touchpoints, tablet_factor, and buffer multiplier assumptions
+        """
+
+        df = self._get_base_df_(scen_data, target_population)
+        if df.empty:
+            return pd.DataFrame()
+
+        self._validate_assumptions_()
+
+        pop_0_1 = df[self.pop_col[0]]
+        pop_1_2 = df[self.pop_col[1]]
+
+        sp_0_1 = (
+            pop_0_1
+            * self.assumptions[f"{self.code}_coverage"]
+            * self.assumptions[f"{self.code}_touchpoints"]
+            * 1
+            * self.assumptions[f"{self.code}_tablet_factor"]
+            * self.assumptions[f"{self.code}_buffer_mult"]
+        )
+        sp_1_2 = (
+            pop_1_2
+            * self.assumptions[f"{self.code}_coverage"]
+            * self.assumptions[f"{self.code}_touchpoints"]
+            * 2
+            * self.assumptions[f"{self.code}_tablet_factor"]
+            * self.assumptions[f"{self.code}_buffer_mult"]
+        )
+        return df.assign(
+            quantity=sp_0_1 + sp_1_2,
+            target_pop=pop_0_1 * self.assumptions[f"{self.code}_coverage"]
+            + pop_1_2 * self.assumptions[f"{self.code}_coverage"],
+            code_intervention=self.code,
+            type_intervention=df[f"type_{self.code}"],
+            unit="per SP",
+        )

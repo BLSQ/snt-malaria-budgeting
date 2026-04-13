@@ -1,20 +1,8 @@
 from typing import Dict, List, Any, Optional
 
 import pandas as pd
-from ..models import InterventionDetailModel, CostItems
+from ..models import InterventionDetailModel, CostItems, UnknownInterventionHandling
 from .PATH_generate_budget import generate_budget
-
-INTERVENTION_BUDGET_CODES = (
-    "itn_campaign",
-    "itn_routine",
-    "iptp",
-    "smc",
-    "pmc",
-    "vacc",
-    # Coming soon:
-    # "irs",
-    # "lsm",
-)
 
 
 class BudgetCalculator:
@@ -28,6 +16,7 @@ class BudgetCalculator:
         spatial_planning_unit: str,
         budget_currency: str = "",
         cost_overrides: Optional[List[CostItems]] = None,
+        unknown_intervention_handling: UnknownInterventionHandling = UnknownInterventionHandling.IGNORE,
     ):
         self.interventions_input = interventions_input
         self.settings = settings
@@ -37,6 +26,7 @@ class BudgetCalculator:
         self.spatial_planning_unit = spatial_planning_unit
         self.budget_currency = budget_currency if budget_currency else local_currency
         self.cost_overrides = cost_overrides if cost_overrides is not None else []
+        self.unknown_intervention_handling = unknown_intervention_handling
         self.places = (
             population_df[spatial_planning_unit].drop_duplicates().values.tolist()
         )
@@ -51,18 +41,19 @@ class BudgetCalculator:
         if year in self.budgets:
             return self.budgets.get(year)
 
-        scen_data = self._get_scenario_data(year)
+        scen_df = self._get_scenario_dataframe(year)
         self._merge_cost_overrides()
         self._normalize_cost_dataframe()
         costs_for_year = self.cost_df[self.cost_df["cost_year_for_analysis"] == year]
         pop_for_year = self.population_df[self.population_df["year"] == year]
         budget = generate_budget(
-            scen_data=scen_data,
-            cost_data=costs_for_year,
+            scen_df=scen_df,
+            cost_df=costs_for_year,
             target_population=pop_for_year,
             assumptions=self.settings,
             spatial_planning_unit=self.spatial_planning_unit,
             local_currency_symbol=self.local_currency.upper(),
+            unknown_intervention_handling=self.unknown_intervention_handling,
         )
 
         self.budgets[year] = budget
@@ -71,6 +62,9 @@ class BudgetCalculator:
 
     def get_interventions_costs(self, year):
         budget = self.calculate_budget(year)
+        if budget.empty:
+            return []
+
         # Filter budget for desired currency (it has two currencies: local and USD)
         budget_filtered = budget[budget["currency"] == self.budget_currency.upper()]
 
@@ -122,6 +116,9 @@ class BudgetCalculator:
     def get_places_costs(self, year):
         budget = self.calculate_budget(year)
         # Filter budget for desired currency (it has two currencies: local and USD)
+        if budget.empty:
+            return []
+
         budget_filtered_by_currency = budget[
             budget["currency"] == self.budget_currency.upper()
         ]
@@ -183,15 +180,28 @@ class BudgetCalculator:
 
         return place_costs
 
-    def _get_scenario_data(
+    def _set_intervention_scen_data(self, budget_code, interventions, scen_df):
+        code_column = f"code_{budget_code}"
+        type_column = f"type_{budget_code}"
+
+        for intervention in interventions:
+            intervention_places = intervention.places
+            intervention_type = intervention.type
+
+            # Use vectorized operations instead of apply()
+            mask = scen_df[self.spatial_planning_unit].isin(intervention_places)
+            scen_df.loc[mask, code_column] = 1
+            scen_df.loc[mask, type_column] = intervention_type
+
+    def _get_scenario_dataframe(
         self,
         year: int,
     ):
         ######################################
         # Convert from json input to dataframe
         ######################################
-        scen_data = pd.DataFrame(self.places, columns=[self.spatial_planning_unit])
-        scen_data["year"] = year  # Set a default year for the scenario
+        scen_df = pd.DataFrame(self.places, columns=[self.spatial_planning_unit])
+        scen_df["year"] = year  # Set a default year for the scenario
 
         #################################################################################
         # Set intervention code and type base on intervention's places from input for all
@@ -200,27 +210,19 @@ class BudgetCalculator:
         #################################################################################
         # Pre-group interventions by code to avoid repeated filtering
         interventions_by_code = {}
+        budget_codes = set()
         for intervention in self.interventions_input:
-            if intervention.code not in interventions_by_code:
-                interventions_by_code[intervention.code] = []
-            interventions_by_code[intervention.code].append(intervention)
+            code = intervention.code
+            if code not in interventions_by_code:
+                interventions_by_code[code] = []
+                budget_codes.add(code)
+            interventions_by_code[code].append(intervention)
 
-        for budget_code in INTERVENTION_BUDGET_CODES:
+        for budget_code in budget_codes:
             interventions = interventions_by_code.get(budget_code, [])
+            self._set_intervention_scen_data(budget_code, interventions, scen_df)
 
-            code_column = f"code_{budget_code}"
-            type_column = f"type_{budget_code}"
-
-            for intervention in interventions:
-                intervention_places = intervention.places
-                intervention_type = intervention.type
-
-                # Use vectorized operations instead of apply()
-                mask = scen_data[self.spatial_planning_unit].isin(intervention_places)
-                scen_data.loc[mask, code_column] = 1
-                scen_data.loc[mask, type_column] = intervention_type
-
-        return scen_data
+        return scen_df
 
     def _merge_cost_overrides(
         self,
@@ -263,153 +265,3 @@ class BudgetCalculator:
         ):
             self.cost_df["cost_year_for_analysis"] = self.cost_df["cost_year"]
         return self.cost_df
-
-
-def get_budget(
-    year: int,
-    interventions_input: List[InterventionDetailModel],
-    settings: Dict[str, Any],
-    cost_df: pd.DataFrame,
-    population_df: pd.DataFrame,
-    local_currency: str,
-    spatial_planning_unit: str,
-    budget_currency: str = "",
-    cost_overrides: Optional[List[CostItems]] = None,
-) -> Dict[str, Any]:
-    if cost_overrides is None:
-        cost_overrides = []
-
-    if not budget_currency:
-        budget_currency = local_currency
-
-    try:
-        places = population_df[spatial_planning_unit].drop_duplicates().values.tolist()
-
-        ######################################
-        # Convert from json input to dataframe
-        ######################################
-        scen_data = pd.DataFrame(places, columns=[spatial_planning_unit])
-        scen_data["year"] = year  # Set a default year for the scenario
-
-        #################################################################################
-        # Set intervention code and type base on intervention's places from input for all
-        # available intervention categories.
-        # Using vectorized operations for performance.
-        #################################################################################
-        interventions_by_code = {}
-        for intervention in interventions_input:
-            if intervention.code not in interventions_by_code:
-                interventions_by_code[intervention.code] = []
-            interventions_by_code[intervention.code].append(intervention)
-
-        for budget_code in INTERVENTION_BUDGET_CODES:
-            interventions = interventions_by_code.get(budget_code, [])
-
-            for intervention in interventions:
-                mask = scen_data[spatial_planning_unit].isin(intervention.places)
-                scen_data.loc[mask, f"code_{budget_code}"] = 1
-                scen_data.loc[mask, f"type_{budget_code}"] = intervention.type
-
-        ######################################
-        # merge cost_df with cost_overrides
-        ######################################
-        input_costs_dict = [cost.dict() for cost in cost_overrides]
-
-        if input_costs_dict.__len__() > 0:
-            validation = cost_df.merge(
-                pd.DataFrame(input_costs_dict),
-                on=["code_intervention", "type_intervention", "cost_class", "unit"],
-                how="inner",
-                suffixes=("", "_y"),
-            )
-
-            if validation.__len__() != input_costs_dict.__len__():
-                raise ValueError("Cost data override validation failed.")
-
-            cost_df = cost_df.merge(
-                pd.DataFrame(input_costs_dict),
-                on=["code_intervention", "type_intervention", "cost_class", "unit"],
-                how="left",
-                suffixes=("", "_y"),
-            )
-            cost_df["usd_cost"] = cost_df["usd_cost_y"].combine_first(
-                cost_df["usd_cost"]
-            )
-
-        # Normalize cost_df columns as required by generate_budget
-        if (
-            "local_currency_cost" not in cost_df.columns
-            and f"{local_currency.lower()}_cost" in cost_df.columns
-        ):
-            cost_df["local_currency_cost"] = cost_df[f"{local_currency.lower()}_cost"]
-        if (
-            "cost_year_for_analysis" not in cost_df.columns
-            and "cost_year" in cost_df.columns
-        ):
-            cost_df["cost_year_for_analysis"] = cost_df["cost_year"]
-
-        budget = generate_budget(
-            scen_data=scen_data,
-            cost_data=cost_df,
-            target_population=population_df,
-            assumptions=settings,
-            spatial_planning_unit=spatial_planning_unit,
-            local_currency_symbol=local_currency.upper(),
-        )
-
-        # Filter budget by currency and year once
-        budget_filtered = budget[
-            (budget["currency"] == budget_currency.upper()) & (budget["year"] == year)
-        ]
-
-        # Group by intervention type and cost class to get all costs in one operation
-        costs_grouped = (
-            budget_filtered.groupby(["type_intervention", "cost_class"])[
-                ["cost_element", "target_pop"]
-            ]
-            .sum()
-            .reset_index()
-        )
-
-        intervention_costs = {
-            "year": year,
-            "interventions": [],
-        }
-
-        intervention_types_and_codes = [[i.type, i.code] for i in interventions_input]
-
-        # Create a dict summarizing the total costs per intervention _type_
-        for intervention_type, code in intervention_types_and_codes:
-            costs = []
-            total_cost = 0
-            total_pop = 0
-
-            # Filter grouped data for this intervention type
-            intervention_data = costs_grouped[
-                costs_grouped["type_intervention"] == intervention_type
-            ]
-
-            for _, row in intervention_data.iterrows():
-                cost_class = row["cost_class"]
-                cost = row["cost_element"]
-                pop = row["target_pop"]
-
-                if cost > 0:
-                    costs.append({"cost_class": cost_class, "cost": cost})
-                total_cost += cost
-                total_pop += pop
-
-            intervention_costs["interventions"].append(
-                {
-                    "type": intervention_type,
-                    "code": code,
-                    "total_cost": total_cost,
-                    "total_pop": total_pop,
-                    "cost_breakdown": costs,
-                }
-            )
-
-        return intervention_costs
-    except Exception as e:
-        print(f"Error generating budget: {e}")
-        raise e

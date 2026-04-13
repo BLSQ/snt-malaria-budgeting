@@ -5,6 +5,7 @@ from snt_malaria_budgeting.core.budget_calculator import BudgetCalculator
 from snt_malaria_budgeting.models import (
     DEFAULT_COST_ASSUMPTIONS,
     InterventionDetailModel,
+    UnknownInterventionHandling,
 )
 
 POP_TOTAL = 250000
@@ -36,6 +37,35 @@ class TestGetBudget(unittest.TestCase):
             }
         )
 
+    def test_get_budget_no_costs(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": [2025],
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions,
+            DEFAULT_COST_ASSUMPTIONS,
+            cost_df,
+            self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+        interventions_costs = budget_calculator.get_interventions_costs(2024)
+        places_costs = budget_calculator.get_places_costs(2024)
+        self.assertEqual(len(interventions_costs), 0)
+        self.assertEqual(len(places_costs), 0)
+
     def test_get_budget_use_default_currency(self):
         interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
         cost_df = pd.DataFrame(
@@ -58,6 +88,7 @@ class TestGetBudget(unittest.TestCase):
             self.population_df,
             local_currency="ngn",
             spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -113,6 +144,7 @@ class TestGetBudget(unittest.TestCase):
             population_df=self.population_df,
             local_currency="ngn",
             spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -176,6 +208,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -238,6 +271,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -312,6 +346,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -396,6 +431,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -481,6 +517,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -525,10 +562,46 @@ class TestGetBudget(unittest.TestCase):
             place_iptp["cost_breakdown"][0]["cost"], correct_vacc_cost
         )
 
+    def test_get_budget_unknown_intervention(self):
+        interventions = [
+            InterventionDetailModel(code="unknown", type="NKWN", places=[1001])
+        ]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["unknown"],
+                "type_intervention": ["NKWN"],
+                "unit": ["per dose"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": [2025],
+                "usd_cost": [3.00],
+                "local_currency_cost": [4800.0],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings=DEFAULT_COST_ASSUMPTIONS,
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
+
+        self.assertEqual(len(interventions_costs), 0)
+        self.assertEqual(len(places_costs), 0)
+
     def test_get_budget_multiple_interventions(self):
         interventions = [
             InterventionDetailModel(code="iptp", type="SP", places=[1001, 1002]),
             InterventionDetailModel(code="smc", type="SP+AQ", places=[1002]),
+            InterventionDetailModel(code="unknown", type="NKWN", places=[1001, 1002]),
         ]
 
         cost_df = pd.DataFrame(
@@ -556,15 +629,17 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
-        self.assertEqual(len(interventions_costs), 2)
+        self.assertEqual(len(interventions_costs), 3)
 
         iptp = next(i for i in interventions_costs if i["type"] == "SP")
         smc = next(i for i in interventions_costs if i["type"] == "SP+AQ")
+        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
 
         correct_iptp_pop_location_1001 = POP_PW
         correct_iptp_pop_location_1002 = POP_PW * 2
@@ -625,6 +700,13 @@ class TestGetBudget(unittest.TestCase):
         self.assertEqual(len(smc["cost_breakdown"]), 1)
         self.assertEqual(smc["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(smc["cost_breakdown"][0]["cost"], correct_smc_cost)
+
+        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
+        self.assertEqual(unknown["total_pop"], 0)
+        self.assertEqual(unknown["total_cost"], 0)
+        self.assertEqual(unknown["type"], "NKWN")
+        self.assertEqual(unknown["code"], "unknown")
+        self.assertEqual(len(unknown["cost_breakdown"]), 0)
 
         place_1001 = next(
             place_cost for place_cost in places_costs if place_cost["place"] == 1001
@@ -720,6 +802,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         interventions_costs = budget_calculator.get_interventions_costs(2025)
@@ -817,6 +900,7 @@ class TestGetBudget(unittest.TestCase):
             local_currency="ngn",
             spatial_planning_unit="key",
             budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
         )
 
         places_costs = budget_calculator.get_places_costs(2025)

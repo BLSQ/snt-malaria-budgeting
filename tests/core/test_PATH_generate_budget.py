@@ -2,11 +2,11 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 from snt_malaria_budgeting.core.budget_calculator import generate_budget
+from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 
 class TestGenerateBudget(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         """Set up mock dataframes and settings once for all tests."""
         # cls.settings = MockCostSettings()
         cls.settings = {}
@@ -86,6 +86,7 @@ class TestGenerateBudget(unittest.TestCase):
                 "code_vacc": [1],
                 "type_vacc": ["R21"],
                 "code_cm_public": [1],  # Case management is handled differently
+                "type_cm_public": ["CM"],
             }
         )
 
@@ -130,9 +131,6 @@ class TestGenerateBudget(unittest.TestCase):
                     "vacc",
                     "vacc",
                     "cm_public",
-                    "cm_public",
-                    "cm_public",
-                    "cm_public",
                 ],
                 "type_intervention": [
                     "Dual AI",
@@ -146,10 +144,7 @@ class TestGenerateBudget(unittest.TestCase):
                     "SP",
                     "R21",
                     "R21",
-                    "RDT kits",
-                    "AL",
-                    "Artesunate injections",
-                    "RAS",
+                    "CM",
                 ],
                 "unit": [
                     "per ITN",
@@ -163,12 +158,9 @@ class TestGenerateBudget(unittest.TestCase):
                     "per child",
                     "per dose",
                     "per child",
-                    "per RDT kit",
-                    "per AL",
-                    "per 60mg powder",
-                    "per RAS",
+                    "Other",
                 ],
-                "cost_class": ["Commodity"] * 15,
+                "cost_class": ["Commodity"] * 12,
                 "cost_year_for_analysis": 2025,
                 "usd_cost": [
                     3.490605554,
@@ -183,9 +175,6 @@ class TestGenerateBudget(unittest.TestCase):
                     4.0,
                     1.0,
                     0.4625,
-                    1.22,
-                    2.003125,
-                    0.439375,
                 ],
                 "local_currency_cost": [
                     5584.968886,
@@ -200,27 +189,30 @@ class TestGenerateBudget(unittest.TestCase):
                     5800.0,
                     584.0,
                     740.0,
-                    1952.0,
-                    3205.0,
-                    703.0,
                 ],
-                "cost_name": ["test"] * 15,
+                "cost_name": ["test"] * 12,
             }
         )
 
     @patch("pandas.read_csv")
     @patch("pandas.read_excel")
-    def run_generate_budget(self, mock_read_excel, mock_read_csv):
+    def run_generate_budget(
+        self,
+        mock_read_excel,
+        mock_read_csv,
+        unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+    ):
         """Helper method to run generate_budget with mocked file reads."""
         mock_read_excel.return_value = self.mock_population_data
         mock_read_csv.return_value = self.mock_cm_data
 
         return generate_budget(
-            scen_data=self.scen_data,
-            cost_data=self.cost_data,
+            scen_df=self.scen_data,
+            cost_df=self.cost_data,
             target_population=self.mock_population_data,
             assumptions=self.settings,
             spatial_planning_unit="adm2",
+            unknown_intervention_handling=unknown_intervention_handling,
         )
 
     def test_itn_campaign_quantification(self):
@@ -284,12 +276,13 @@ class TestGenerateBudget(unittest.TestCase):
             df[df["unit"] == "per dose"]["quantity"].iloc[0], 40565.96406, 2
         )
 
-    # def test_case_management_quantification(self):
-    #     """Verify Case Management quantities are loaded correctly."""
-    #     result = self.run_generate_budget()
-    #     df = result[result['code_intervention'] == 'cm_public']
-    #     self.assertAlmostEqual(df[df['unit'] == 'per RDT kit']['quantity'].iloc[0], 500.0)
-    #     self.assertAlmostEqual(df[df['unit'] == 'per AL']['quantity'].iloc[0], 400.0)
+    def test_case_management_quantification(self):
+        """Verify Case Management quantities are loaded correctly."""
+        result = self.run_generate_budget()
+        df = result[result["code_intervention"] == "cm_public"]
+        self.assertAlmostEqual(
+            df[df["unit"] == "Other"]["quantity"].iloc[0], 342988.7383 * 1, 2
+        )
 
     def test_final_cost_calculation(self):
         """Verify a final cost_element calculation."""
@@ -343,6 +336,42 @@ class TestGenerateBudget(unittest.TestCase):
         ]["cost_element"].sum()
         self.assertAlmostEqual(pmc_cost, 23595.0956, 2)
 
+        # Case management: 342988.7383 cases * 1 coverage * $0.4625/case = $158632.29146375
+        cm_cost = result[
+            (result["code_intervention"] == "cm_public") & (result["currency"] == "USD")
+        ]["cost_element"].sum()
+        self.assertAlmostEqual(cm_cost, 158632.29146375, 2)
+
+    def test_unknown_intervention_handling(self):
+        """Verify that missing interventions are handled according to the specified setting."""
+        # Run with HANDLE setting - should not raise an error and should return a budget with available interventions
+        result_handle = self.run_generate_budget(
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE
+        )
+        self.assertFalse(result_handle.empty)
+        cm_cost_empty = result_handle[
+            (result_handle["code_intervention"] == "cm_public")
+        ]
+        self.assertFalse(cm_cost_empty.empty)  # Case management should be handled
+
+        # Run with ERROR setting - should raise a ValueError due to missing interventions
+        with self.assertRaises(ValueError):
+            self.run_generate_budget(
+                unknown_intervention_handling=UnknownInterventionHandling.ERROR
+            )
+
+        # Run with IGNORE setting - should not raise an error and should return a budget with available interventions, ignoring missing ones
+        result_ignore = self.run_generate_budget(
+            unknown_intervention_handling=UnknownInterventionHandling.IGNORE
+        )
+        self.assertFalse(result_ignore.empty)
+        cm_cost_empty = result_ignore[
+            (result_ignore["code_intervention"] == "cm_public")
+        ]
+        self.assertTrue(
+            cm_cost_empty.empty
+        )  # Case management should be missing and thus ignored
+
     def test_output_structure_and_completeness(self):
         """Verify the final DataFrame contains all expected interventions and columns."""
         result = self.run_generate_budget()
@@ -360,6 +389,34 @@ class TestGenerateBudget(unittest.TestCase):
         present_interventions = result["code_intervention"].unique()
         for intervention in expected_interventions:
             self.assertIn(intervention, present_interventions)
+
+    def test_empty_cost_data_handling(self):
+        """Verify that the function handles empty cost data gracefully."""
+        # Create an empty cost DataFrame
+        empty_cost_df = pd.DataFrame(
+            columns=[
+                "code_intervention",
+                "type_intervention",
+                "unit",
+                "cost_class",
+                "cost_year_for_analysis",
+                "usd_cost",
+                "local_currency_cost",
+                "cost_name",
+            ]
+        )
+
+        # Run generate_budget with empty cost data
+        result = generate_budget(
+            scen_df=self.scen_data,
+            cost_df=empty_cost_df,
+            target_population=self.mock_population_data,
+            assumptions=self.settings,
+            spatial_planning_unit="adm2",
+        )
+
+        # The result should be an empty DataFrame since there are no costs to calculate
+        self.assertTrue(result.empty)
 
 
 if __name__ == "__main__":
