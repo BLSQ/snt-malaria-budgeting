@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.7.0...v0.8.0) (2026-04-13)
+
+
+### Features
+
+* Implement the default budget calculation ([#42](https://github.com/BLSQ/snt-malaria-budgeting/issues/42)) ([b9dbe88](https://github.com/BLSQ/snt-malaria-budgeting/commit/b9dbe8836190a59d15b2c662876a032bdd6ce3dc))
+
 ## [0.7.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.6.0...v0.7.0) (2026-02-23)
 
 
