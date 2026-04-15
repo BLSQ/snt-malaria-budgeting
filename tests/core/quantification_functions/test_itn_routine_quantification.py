@@ -37,6 +37,10 @@ class TestItnRoutineQuantification(unittest.TestCase):
                 "year": [year],
                 "pop_0_5": [342988.7383],
                 "pop_pw": [20134.897],
+                "pop_0_5_custom": [32988.7383],
+                "pop_pw_custom": [2134.897],
+                "pop_0_5_custom_2": [30988.7383],
+                "pop_pw_custom_2": [2034.897],
             }
         )
 
@@ -50,7 +54,7 @@ class TestItnRoutineQuantification(unittest.TestCase):
                 ],
                 "unit": ["per ITN"],
                 "cost_class": ["Commodity"],
-                "cost_year_for_analysis": 2025,
+                "cost_year_for_analysis": year,
                 "usd_cost": [1.0],
                 "local_currency_cost": [584.0],
                 "cost_name": ["test"],
@@ -93,6 +97,96 @@ class TestItnRoutineQuantification(unittest.TestCase):
             (
                 self.mock_population_data["pop_0_5"][0]
                 + self.mock_population_data["pop_pw"][0]
+            ),
+        )
+
+    def test_itn_routine_quantification_custom_target_population(self):
+        """Test that ItnRoutineQuantification returns expected results for a known code with custom target population."""
+
+        quant = ItnRoutineQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "itn_routine_coverage": 0.5,
+                "itn_routine_buffer_mult": 1.1,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_itn_routine"] = [
+            ["pop_0_5_custom", "pop_pw_custom"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = (
+            (
+                self.mock_population_data["pop_0_5_custom"][0]
+                + self.mock_population_data["pop_pw_custom"][0]
+            )
+            * 0.5
+            * 1.1
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        net_result = result[result["unit"] == "per ITN"].iloc[0]
+
+        self.assertAlmostEqual(net_result["quantity"], expected_quantity)
+        self.assertAlmostEqual(
+            net_result["target_pop"],
+            (
+                self.mock_population_data["pop_0_5_custom"][0]
+                + self.mock_population_data["pop_pw_custom"][0]
+            ),
+        )
+
+    def test_itn_routine_quantification_multiple_custom_target_population(self):
+        """Test that ItnRoutineQuantification returns expected results for a known code with multiple custom target populations."""
+
+        quant = ItnRoutineQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "itn_routine_coverage": 0.5,
+                "itn_routine_buffer_mult": 1.1,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_itn_routine"] = [
+            ["pop_0_5_custom", "pop_pw_custom", "pop_0_5_custom_2", "pop_pw_custom_2"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = (
+            (
+                self.mock_population_data["pop_0_5_custom"][0]
+                + self.mock_population_data["pop_pw_custom"][0]
+                + self.mock_population_data["pop_0_5_custom_2"][0]
+                + self.mock_population_data["pop_pw_custom_2"][0]
+            )
+            * 0.5
+            * 1.1
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        net_result = result[result["unit"] == "per ITN"].iloc[0]
+
+        self.assertAlmostEqual(net_result["quantity"], expected_quantity)
+        self.assertAlmostEqual(
+            net_result["target_pop"],
+            (
+                self.mock_population_data["pop_0_5_custom"][0]
+                + self.mock_population_data["pop_pw_custom"][0]
+                + self.mock_population_data["pop_0_5_custom_2"][0]
+                + self.mock_population_data["pop_pw_custom_2"][0]
             ),
         )
 

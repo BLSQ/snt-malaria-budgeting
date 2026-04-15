@@ -9,7 +9,6 @@ class SMCQuantification(BaseQuantification):
             "smc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="SMC: target population",
             default_pop_col=["pop_0_5"],
             required_assumptions=[
                 "smc_coverage",
@@ -63,21 +62,23 @@ class SMCQuantification(BaseQuantification):
 
         self._validate_assumptions_()
 
+        target_pop_raw = self._get_sum_target_population_(df)
+
         df = df.assign(
             quant_smc_3_11_months=(
-                (df[self.pop_col[0]] * self.assumptions[f"{self.code}_pop_prop_3_11"])
+                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_3_11"])
                 * self.assumptions[f"{self.code}_coverage"]
             )
             * self.assumptions[f"{self.code}_monthly_rounds"]
             * self.assumptions[f"{self.code}_buffer_mult"],
             quant_smc_12_59_months=(
-                (df[self.pop_col[0]] * self.assumptions[f"{self.code}_pop_prop_12_59"])
+                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_12_59"])
                 * self.assumptions[f"{self.code}_coverage"]
             )
             * self.assumptions[f"{self.code}_monthly_rounds"]
             * self.assumptions[f"{self.code}_buffer_mult"],
             target_pop=(
-                df[self.pop_col[0]]
+                target_pop_raw
                 * (
                     self.assumptions[f"{self.code}_pop_prop_3_11"]
                     + self.assumptions[f"{self.code}_pop_prop_12_59"]

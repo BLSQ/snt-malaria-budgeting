@@ -34,6 +34,8 @@ class TestSMCQuantification(unittest.TestCase):
                 "adm2": [admin2],
                 "year": [year],
                 "pop_0_5": [342988.7383],
+                "pop_0_5_custom": [32988.7383],
+                "pop_0_5_custom_2": [30988.7383],
             }
         )
 
@@ -71,6 +73,103 @@ class TestSMCQuantification(unittest.TestCase):
 
         assumption_ratio = 0.5 * 1.1 * 1.5
         pop_0_5 = self.mock_population_data["pop_0_5"][0]
+        expected_quantity_3_11 = pop_0_5 * 0.6 * assumption_ratio
+        expected_quantity_12_59 = pop_0_5 * 0.3 * assumption_ratio
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        result_3_11 = result[result["unit"] == "per SPAQ pack 3-11 month olds"].iloc[0]
+
+        self.assertAlmostEqual(result_3_11["quantity"], expected_quantity_3_11)
+        self.assertAlmostEqual(
+            result_3_11["target_pop"],
+            pop_0_5 * (0.6 + 0.3) * 0.5,
+        )
+
+        result_12_59 = result[result["unit"] == "per SPAQ pack 12-59 month olds"].iloc[
+            0
+        ]
+        self.assertAlmostEqual(result_12_59["quantity"], expected_quantity_12_59)
+        self.assertAlmostEqual(
+            result_12_59["target_pop"],
+            pop_0_5 * (0.3 + 0.6) * 0.5,
+        )
+
+    def test_smc_quantification_custom_target_population(self):
+        """Test that SMCQuantification returns expected results for a known code."""
+
+        quant = SMCQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "smc_coverage": 0.5,
+                "smc_buffer_mult": 1.1,
+                "smc_monthly_rounds": 1.5,
+                "smc_pop_prop_3_11": 0.6,
+                "smc_pop_prop_12_59": 0.3,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_smc"] = [["pop_0_5_custom"]]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        assumption_ratio = 0.5 * 1.1 * 1.5
+        pop_0_5 = self.mock_population_data["pop_0_5_custom"][0]
+        expected_quantity_3_11 = pop_0_5 * 0.6 * assumption_ratio
+        expected_quantity_12_59 = pop_0_5 * 0.3 * assumption_ratio
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        result_3_11 = result[result["unit"] == "per SPAQ pack 3-11 month olds"].iloc[0]
+
+        self.assertAlmostEqual(result_3_11["quantity"], expected_quantity_3_11)
+        self.assertAlmostEqual(
+            result_3_11["target_pop"],
+            pop_0_5 * (0.6 + 0.3) * 0.5,
+        )
+
+        result_12_59 = result[result["unit"] == "per SPAQ pack 12-59 month olds"].iloc[
+            0
+        ]
+        self.assertAlmostEqual(result_12_59["quantity"], expected_quantity_12_59)
+        self.assertAlmostEqual(
+            result_12_59["target_pop"],
+            pop_0_5 * (0.3 + 0.6) * 0.5,
+        )
+
+    def test_smc_quantification_multiple_custom_target_population(self):
+        """Test that SMCQuantification returns expected results for a known code."""
+
+        quant = SMCQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "smc_coverage": 0.5,
+                "smc_buffer_mult": 1.1,
+                "smc_monthly_rounds": 1.5,
+                "smc_pop_prop_3_11": 0.6,
+                "smc_pop_prop_12_59": 0.3,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_smc"] = [
+            ["pop_0_5_custom", "pop_0_5_custom_2"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        assumption_ratio = 0.5 * 1.1 * 1.5
+        pop_0_5 = (
+            self.mock_population_data["pop_0_5_custom"][0]
+            + self.mock_population_data["pop_0_5_custom_2"][0]
+        )
         expected_quantity_3_11 = pop_0_5 * 0.6 * assumption_ratio
         expected_quantity_12_59 = pop_0_5 * 0.3 * assumption_ratio
 

@@ -36,6 +36,8 @@ class TestItnCampaignQuantification(unittest.TestCase):
                 "adm2": [admin2],
                 "year": [year],
                 "pop_total": [342988.7383],
+                "pop_custom": [32988.7383],
+                "pop_custom_2": [30988.7383],
             }
         )
 
@@ -95,6 +97,106 @@ class TestItnCampaignQuantification(unittest.TestCase):
         self.assertAlmostEqual(bale_result["quantity"], expected_bale_quantity)
         self.assertAlmostEqual(
             bale_result["target_pop"], self.mock_population_data["pop_total"][0] * 0.5
+        )
+
+    def test_itn_campaign_quantification_custom_pop_columns(self):
+        """Test that ItnCampaignQuantification returns expected results for a known code with overridden population column."""
+
+        quant = ItnCampaignQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "itn_campaign_coverage": 0.5,
+                "itn_campaign_divisor": 1.5,
+                "itn_campaign_buffer_mult": 1.1,
+                "itn_campaign_bale_size": 10,
+            },
+        )
+        scen_data = self.scen_data.assign(
+            target_population_columns_itn_campaign=[["pop_custom"]]
+        )
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_net_quantity = (
+            self.mock_population_data["pop_custom"][0] * 0.5 * 1.1 / 1.5
+        )
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        net_result = result[result["unit"] == "per ITN"].iloc[0]
+
+        self.assertAlmostEqual(net_result["quantity"], expected_net_quantity)
+        self.assertAlmostEqual(
+            net_result["target_pop"], self.mock_population_data["pop_custom"][0] * 0.5
+        )
+
+        expected_bale_quantity = expected_net_quantity / 10
+        bale_result = result[result["unit"] == "per bale"].iloc[0]
+        self.assertAlmostEqual(bale_result["quantity"], expected_bale_quantity)
+        self.assertAlmostEqual(
+            bale_result["target_pop"], self.mock_population_data["pop_custom"][0] * 0.5
+        )
+
+    def test_itn_campaign_quantification_multiple_custom_pop_columns(self):
+        """Test that ItnCampaignQuantification returns expected results for a known code with overridden population column."""
+
+        quant = ItnCampaignQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "itn_campaign_coverage": 0.5,
+                "itn_campaign_divisor": 1.5,
+                "itn_campaign_buffer_mult": 1.1,
+                "itn_campaign_bale_size": 10,
+            },
+        )
+        scen_data = self.scen_data.assign(
+            target_population_columns_itn_campaign=[["pop_custom", "pop_custom_2"]]
+        )
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_net_quantity = (
+            (
+                self.mock_population_data["pop_custom"][0]
+                + self.mock_population_data["pop_custom_2"][0]
+            )
+            * 0.5
+            * 1.1
+            / 1.5
+        )
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        net_result = result[result["unit"] == "per ITN"].iloc[0]
+
+        self.assertAlmostEqual(net_result["quantity"], expected_net_quantity)
+        self.assertAlmostEqual(
+            net_result["target_pop"],
+            (
+                self.mock_population_data["pop_custom"][0]
+                + self.mock_population_data["pop_custom_2"][0]
+            )
+            * 0.5,
+        )
+
+        expected_bale_quantity = expected_net_quantity / 10
+        bale_result = result[result["unit"] == "per bale"].iloc[0]
+        self.assertAlmostEqual(bale_result["quantity"], expected_bale_quantity)
+        self.assertAlmostEqual(
+            bale_result["target_pop"],
+            (
+                self.mock_population_data["pop_custom"][0]
+                + self.mock_population_data["pop_custom_2"][0]
+            )
+            * 0.5,
         )
 
     def test_itn_campaign_quantification_empty_base(self):

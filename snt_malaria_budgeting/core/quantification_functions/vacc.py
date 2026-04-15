@@ -11,7 +11,6 @@ class VaccQuantification(BaseQuantification):
             "vacc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="Vaccine: target population",
             default_pop_col=["pop_vaccine_5_36_months"],
             required_assumptions=[
                 "vacc_coverage",
@@ -50,12 +49,14 @@ class VaccQuantification(BaseQuantification):
 
         self._validate_assumptions_()
 
+        target_pop_raw = self._get_sum_target_population_(df)
+
         df = df.assign(
-            quant_doses=df[self.pop_col[0]]
+            quant_doses=target_pop_raw
             * self.assumptions[f"{self.code}_coverage"]
             * self.assumptions[f"{self.code}_doses_per_child"]
             * self.assumptions[f"{self.code}_buffer_mult"],
-            quant_child=df[self.pop_col[0]] * self.assumptions[f"{self.code}_coverage"],
+            quant_child=target_pop_raw * self.assumptions[f"{self.code}_coverage"],
         ).assign(
             target_pop=lambda x: x.quant_child,
             code_intervention=self.code,

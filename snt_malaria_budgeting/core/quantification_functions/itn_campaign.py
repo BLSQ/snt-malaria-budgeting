@@ -8,7 +8,6 @@ class ItnCampaignQuantification(BaseQuantification):
             "itn_campaign",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="ITN Campaign: target population",
             default_pop_col=["pop_total"],
             required_assumptions=[
                 "itn_campaign_coverage",
@@ -49,7 +48,7 @@ class ItnCampaignQuantification(BaseQuantification):
 
         self._validate_assumptions_()
 
-        target_pop_raw = df[self.pop_col].sum(axis=1)
+        target_pop_raw = self._get_sum_target_population_(df)
 
         df = df.assign(
             quant_nets=(

@@ -35,7 +35,9 @@ class TestVaccQuantification(unittest.TestCase):
                 "adm1": [admin1],
                 "adm2": [admin2],
                 "year": [year],
-                "pop_vaccine_5_36_months": [342988.7383],
+                "pop_vaccine_5_36_months": [32988.7383],
+                "pop_vaccine_5_36_months_custom": [32088.7383],
+                "pop_vaccine_5_36_months_custom_2": [30988.7383],
             }
         )
 
@@ -78,6 +80,96 @@ class TestVaccQuantification(unittest.TestCase):
         expected_quantity_per_child = (
             self.mock_population_data["pop_vaccine_5_36_months"][0] * 0.5
         )
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        dose_result = result[result["unit"] == "per dose"].iloc[0]
+
+        self.assertAlmostEqual(dose_result["quantity"], expected_quantity_per_dose)
+        self.assertAlmostEqual(
+            dose_result["target_pop"],
+            expected_quantity_per_child,
+        )
+
+        child_result = result[result["unit"] == "per child"].iloc[0]
+        self.assertAlmostEqual(child_result["quantity"], expected_quantity_per_child)
+        self.assertAlmostEqual(child_result["target_pop"], expected_quantity_per_child)
+
+    def test_vacc_quantification_custom_target_population(self):
+        """Test that VaccQuantification returns expected results for a known code."""
+
+        quant = VaccQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "vacc_coverage": 0.5,
+                "vacc_buffer_mult": 1.1,
+                "vacc_doses_per_child": 3,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_vacc"] = [
+            ["pop_vaccine_5_36_months_custom"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity_per_dose = (
+            self.mock_population_data["pop_vaccine_5_36_months_custom"][0]
+            * 0.5
+            * 1.1
+            * 3
+        )
+
+        expected_quantity_per_child = (
+            self.mock_population_data["pop_vaccine_5_36_months_custom"][0] * 0.5
+        )
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        dose_result = result[result["unit"] == "per dose"].iloc[0]
+
+        self.assertAlmostEqual(dose_result["quantity"], expected_quantity_per_dose)
+        self.assertAlmostEqual(
+            dose_result["target_pop"],
+            expected_quantity_per_child,
+        )
+
+        child_result = result[result["unit"] == "per child"].iloc[0]
+        self.assertAlmostEqual(child_result["quantity"], expected_quantity_per_child)
+        self.assertAlmostEqual(child_result["target_pop"], expected_quantity_per_child)
+
+    def test_vacc_quantification_multiple_custom_target_population(self):
+        """Test that VaccQuantification returns expected results for a known code."""
+
+        quant = VaccQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "vacc_coverage": 0.5,
+                "vacc_buffer_mult": 1.1,
+                "vacc_doses_per_child": 3,
+            },
+        )
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_vacc"] = [
+            ["pop_vaccine_5_36_months_custom", "pop_vaccine_5_36_months_custom_2"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+        target_pop_sum = (
+            self.mock_population_data["pop_vaccine_5_36_months_custom"][0]
+            + self.mock_population_data["pop_vaccine_5_36_months_custom_2"][0]
+        )
+        expected_quantity_per_dose = target_pop_sum * 0.5 * 1.1 * 3
+
+        expected_quantity_per_child = target_pop_sum * 0.5
 
         self.assertEqual(len(result), 2)
         self.assertIn("quantity", result.columns)

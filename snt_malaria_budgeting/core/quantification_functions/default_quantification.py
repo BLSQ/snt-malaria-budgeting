@@ -45,9 +45,11 @@ class DefaultQuantification(BaseQuantification):
             f"{self.code}_coverage", self.assumptions.get("default_coverage", 1)
         )
 
+        target_pop_sum = self._get_sum_target_population_(df)
+
         return df.assign(
-            quantity=(df[self.pop_col[0]] * coverage),
-            target_pop=df[self.pop_col[0]],
+            quantity=target_pop_sum * coverage,
+            target_pop=target_pop_sum,
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
             unit="Other",  # This is a tricky one, it is used to know which cost class we should use but for default, we don't have any

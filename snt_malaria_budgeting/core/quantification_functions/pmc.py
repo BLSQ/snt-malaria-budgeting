@@ -9,7 +9,6 @@ class PMCQuantification(BaseQuantification):
             "pmc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="PMC: target population",
             default_pop_col=["pop_0_1", "pop_1_2"],
             required_assumptions=[
                 "pmc_coverage",
@@ -18,6 +17,17 @@ class PMCQuantification(BaseQuantification):
                 "pmc_buffer_mult",
             ],
         )
+
+    def _validate_df_(self, df):
+        if (
+            not df[f"target_population_columns_{self.code}"]
+            .apply(lambda x: len(x) == 2)
+            .all()
+        ):
+            raise ValueError(
+                f"target_population_columns_{self.code} must contain exactly 2 items"
+            )
+        return super()._validate_assumptions_()
 
     def get_quantification(self, scen_data, target_population):
         """
@@ -42,14 +52,17 @@ class PMCQuantification(BaseQuantification):
             - Calculations include coverage, touchpoints, tablet_factor, and buffer multiplier assumptions
         """
 
+        # TODO, I think this could be moved to based class
         df = self._get_base_df_(scen_data, target_population)
         if df.empty:
             return pd.DataFrame()
 
-        self._validate_assumptions_()
+        self._validate_df_(df)
 
-        pop_0_1 = df[self.pop_col[0]]
-        pop_1_2 = df[self.pop_col[1]]
+        pop_df = self._get_target_population_df_(df)
+
+        pop_0_1 = pop_df.iloc[:, 0]
+        pop_1_2 = pop_df.iloc[:, 1]
 
         sp_0_1 = (
             pop_0_1

@@ -35,6 +35,8 @@ class TestPMCQuantification(unittest.TestCase):
                 "year": [year],
                 "pop_0_1": [342988.7383],
                 "pop_1_2": [20134.897],
+                "pop_0_1_custom": [32988.7383],
+                "pop_1_2_custom": [2134.897],
             }
         )
 
@@ -90,6 +92,69 @@ class TestPMCQuantification(unittest.TestCase):
             self.mock_population_data["pop_0_1"][0] * 0.5
             + self.mock_population_data["pop_1_2"][0] * 0.5,
         )
+
+    def test_pmc_quantification_custom_target_population(self):
+        """Test that PMCQuantification returns expected results for a known code with custom target population columns."""
+
+        quant = PMCQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "pmc_coverage": 0.5,
+                "pmc_touchpoints": 1.5,
+                "pmc_tablet_factor": 1.1,
+                "pmc_buffer_mult": 1.1,
+            },
+        )
+
+        scen_data = self.scen_data.copy()
+        scen_data["target_population_columns_pmc"] = [
+            ["pop_0_1_custom", "pop_1_2_custom"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        assumption_ratio = 0.5 * 1.5 * 1.1 * 1.1
+        expected_quantity = (
+            self.mock_population_data["pop_0_1_custom"][0] * assumption_ratio
+            + self.mock_population_data["pop_1_2_custom"][0] * assumption_ratio * 2
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        net_result = result[result["unit"] == "per SP"].iloc[0]
+
+        self.assertAlmostEqual(net_result["quantity"], expected_quantity)
+        self.assertAlmostEqual(
+            net_result["target_pop"],
+            self.mock_population_data["pop_0_1_custom"][0] * 0.5
+            + self.mock_population_data["pop_1_2_custom"][0] * 0.5,
+        )
+
+    def test_pmc_quantitification_invalid_target_population_columns(self):
+        """Test that PMCQuantification raises an error when target_population_columns does not contain exactly 2 items."""
+
+        scen_data_invalid_pop_cols = self.scen_data.copy()
+        scen_data_invalid_pop_cols["target_population_columns_pmc"] = [["pop_0_1"]]
+
+        quant = PMCQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "pmc_coverage": 0.5,
+                "pmc_touchpoints": 1.5,
+                "pmc_tablet_factor": 1.1,
+                "pmc_buffer_mult": 1.1,
+            },
+        )
+        with self.assertRaisesRegex(
+            ValueError, r"target_population_columns_pmc must contain exactly 2 items"
+        ):
+            quant.get_quantification(
+                scen_data_invalid_pop_cols, self.mock_population_data
+            )
 
     def test_pmc_quantification_empty_base(self):
         """Test that PMCQuantification returns an empty DataFrame when base data is empty."""

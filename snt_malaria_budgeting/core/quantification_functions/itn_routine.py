@@ -8,7 +8,6 @@ class ItnRoutineQuantification(BaseQuantification):
             "itn_routine",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="ITN Routine: target population",
             default_pop_col=["pop_0_5", "pop_pw"],
             required_assumptions=[
                 "itn_routine_coverage",
@@ -58,11 +57,12 @@ class ItnRoutineQuantification(BaseQuantification):
 
         self._validate_assumptions_()
 
-        df["target_pop"] = df[self.pop_col].sum(axis=1)
+        target_pop_raw = self._get_sum_target_population_(df)
         return df.assign(
-            quantity=(df["target_pop"] * self.assumptions[f"{self.code}_coverage"])
+            quantity=(target_pop_raw * self.assumptions[f"{self.code}_coverage"])
             * self.assumptions[f"{self.code}_buffer_mult"],
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
             unit="per ITN",
+            target_pop=target_pop_raw,
         )

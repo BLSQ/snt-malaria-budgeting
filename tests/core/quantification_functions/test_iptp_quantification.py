@@ -32,6 +32,8 @@ class TestIPTPQuantification(unittest.TestCase):
                 "adm2": [admin2],
                 "year": [year],
                 "pop_pw": [342988.7383],
+                "pop_pw_custom": [32988.7383],
+                "pop_pw_custom_2": [32988.7383],
             }
         )
 
@@ -83,6 +85,84 @@ class TestIPTPQuantification(unittest.TestCase):
         self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
         self.assertAlmostEqual(
             result["target_pop"].iloc[0], self.mock_population_data["pop_pw"][0]
+        )
+        self.assertEqual(result["code_intervention"].iloc[0], "iptp")
+        self.assertEqual(result["type_intervention"].iloc[0], "IPTP")
+        self.assertEqual(result["unit"].iloc[0], "per SP")
+
+    def test_iptp_quantification_custom_population_column(self):
+        """Test that IPTPQuantification returns expected results when using a custom population column."""
+
+        quant = IPTPQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "iptp_anc_coverage": 0.5,
+                "iptp_doses_per_pw": 1.5,
+                "iptp_buffer_mult": 1.1,
+            },
+        )
+        scen_data = self.scen_data.assign(
+            target_population_columns_iptp=[["pop_pw_custom"]]
+        )
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = (
+            self.mock_population_data["pop_pw_custom"][0] * 0.5 * 1.5 * 1.1
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
+        self.assertAlmostEqual(
+            result["target_pop"].iloc[0], self.mock_population_data["pop_pw_custom"][0]
+        )
+        self.assertEqual(result["code_intervention"].iloc[0], "iptp")
+        self.assertEqual(result["type_intervention"].iloc[0], "IPTP")
+        self.assertEqual(result["unit"].iloc[0], "per SP")
+
+    def test_iptp_quantification_multiple_custom_population_columns(self):
+        """Test that IPTPQuantification returns expected results when using multiple custom population columns."""
+
+        quant = IPTPQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "iptp_anc_coverage": 0.5,
+                "iptp_doses_per_pw": 1.5,
+                "iptp_buffer_mult": 1.1,
+            },
+        )
+        scen_data = self.scen_data.assign(
+            target_population_columns_iptp=[["pop_pw_custom", "pop_pw_custom_2"]]
+        )
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = (
+            (
+                self.mock_population_data["pop_pw_custom"][0]
+                + self.mock_population_data["pop_pw_custom_2"][0]
+            )
+            * 0.5
+            * 1.5
+            * 1.1
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
+        self.assertAlmostEqual(
+            result["target_pop"].iloc[0],
+            self.mock_population_data["pop_pw_custom"][0]
+            + self.mock_population_data["pop_pw_custom_2"][0],
         )
         self.assertEqual(result["code_intervention"].iloc[0], "iptp")
         self.assertEqual(result["type_intervention"].iloc[0], "IPTP")

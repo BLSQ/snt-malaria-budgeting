@@ -34,6 +34,8 @@ class TestGetBudget(unittest.TestCase):
                     POP_VACCINE_5_36_MONTHS,
                     POP_VACCINE_5_36_MONTHS * 2,
                 ],
+                "custom_pop_1": [POP_0_1 * 1.5, POP_0_1 * 2.5, POP_0_1, POP_0_1 * 2.5],
+                "custom_pop_2": [POP_1_2 * 1.5, POP_1_2 * 2.5, POP_1_2, POP_1_2 * 3.5],
             }
         )
 
@@ -571,7 +573,7 @@ class TestGetBudget(unittest.TestCase):
             {
                 "code_intervention": ["unknown"],
                 "type_intervention": ["NKWN"],
-                "unit": ["per dose"],
+                "unit": ["Other"],
                 "cost_class": ["Commodity"],
                 "cost_year_for_analysis": [2025],
                 "usd_cost": [3.00],
@@ -594,8 +596,15 @@ class TestGetBudget(unittest.TestCase):
         interventions_costs = budget_calculator.get_interventions_costs(2025)
         places_costs = budget_calculator.get_places_costs(2025)
 
-        self.assertEqual(len(interventions_costs), 0)
-        self.assertEqual(len(places_costs), 0)
+        self.assertEqual(len(interventions_costs), 1)
+        self.assertEqual(len(places_costs), 2)
+        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
+        self.assertEqual(unknown["code"], "unknown")
+        self.assertEqual(unknown["total_cost"], 750000)
+        self.assertEqual(unknown["total_pop"], POP_TOTAL)
+        self.assertEqual(len(unknown["cost_breakdown"]), 1)
+        self.assertEqual(unknown["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertEqual(unknown["cost_breakdown"][0]["cost"], 750000)
 
     def test_get_budget_multiple_interventions(self):
         interventions = [
@@ -690,6 +699,177 @@ class TestGetBudget(unittest.TestCase):
             * DEFAULT_COST_ASSUMPTIONS["smc_monthly_rounds"]
             * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
         ) * 2  # Doubled for location 1002
+
+        correct_smc_cost = correct_smc_cost_3_11 + correct_smc_cost_12_59
+
+        self.assertAlmostEqual(smc["total_pop"], correct_smc_target_pop)
+        self.assertAlmostEqual(smc["total_cost"], correct_smc_cost)
+        self.assertEqual(smc["type"], "SP+AQ")
+        self.assertEqual(smc["code"], "smc")
+        self.assertEqual(len(smc["cost_breakdown"]), 1)
+        self.assertEqual(smc["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(smc["cost_breakdown"][0]["cost"], correct_smc_cost)
+
+        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
+        self.assertEqual(unknown["total_pop"], 0)
+        self.assertEqual(unknown["total_cost"], 0)
+        self.assertEqual(unknown["type"], "NKWN")
+        self.assertEqual(unknown["code"], "unknown")
+        self.assertEqual(len(unknown["cost_breakdown"]), 0)
+
+        place_1001 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1001
+        )
+        self.assertAlmostEqual(
+            place_1001["total_cost"], correct_iptp_cost_location_1001
+        )
+        self.assertEqual(len(place_1001["interventions"]), 1)
+        place_iptp = place_1001["interventions"][0]
+        self.assertEqual(place_iptp["type"], "SP")
+        self.assertEqual(place_iptp["code"], "iptp")
+        self.assertAlmostEqual(
+            place_iptp["total_cost"], correct_iptp_cost_location_1001
+        )
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1001
+        )
+
+        place_1002 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1002
+        )
+        self.assertAlmostEqual(
+            place_1002["total_cost"], correct_iptp_cost_location_1002 + correct_smc_cost
+        )
+        self.assertEqual(len(place_1002["interventions"]), 2)
+        place_iptp = place_1002["interventions"][0]
+        self.assertEqual(place_iptp["type"], "SP")
+        self.assertEqual(place_iptp["code"], "iptp")
+        self.assertAlmostEqual(
+            place_iptp["total_cost"], correct_iptp_cost_location_1002
+        )
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1002
+        )
+        place_smc = place_1002["interventions"][1]
+        self.assertEqual(place_smc["type"], "SP+AQ")
+        self.assertEqual(place_smc["code"], "smc")
+        self.assertAlmostEqual(place_smc["total_cost"], correct_smc_cost)
+        self.assertEqual(len(place_smc["cost_breakdown"]), 1)
+        self.assertEqual(place_smc["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(place_smc["cost_breakdown"][0]["cost"], correct_smc_cost)
+
+    def test_get_budget_custom_population(self):
+        interventions = [
+            InterventionDetailModel(
+                code="iptp",
+                type="SP",
+                places=[1001, 1002],
+                target_population_columns=["custom_pop_1"],
+            ),
+            InterventionDetailModel(
+                code="smc",
+                type="SP+AQ",
+                places=[1002],
+                target_population_columns=["custom_pop_2"],
+            ),
+            InterventionDetailModel(
+                code="unknown",
+                type="NKWN",
+                places=[1001, 1002],
+                target_population_columns=["custom_pop_1", "custom_pop_2"],
+            ),
+        ]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp", "smc", "smc"],
+                "type_intervention": ["SP", "SP+AQ", "SP+AQ"],
+                "unit": [
+                    "per SP",
+                    "per SPAQ pack 3-11 month olds",
+                    "per SPAQ pack 12-59 month olds",
+                ],
+                "cost_class": ["Commodity", "Commodity", "Commodity"],
+                "cost_year_for_analysis": [2025, 2025, 2025],
+                "usd_cost": [0.50558094, 0.29, 0.35],
+                "local_currency_cost": [1, 480.0, 480.0],
+                "cost_name": ["test", "test", "test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings=DEFAULT_COST_ASSUMPTIONS,
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            budget_currency="usd",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
+
+        self.assertEqual(len(interventions_costs), 3)
+
+        iptp = next(i for i in interventions_costs if i["type"] == "SP")
+        smc = next(i for i in interventions_costs if i["type"] == "SP+AQ")
+        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
+
+        correct_iptp_pop_location_1001 = POP_0_1 * 1.5
+        correct_iptp_pop_location_1002 = POP_0_1 * 2.5
+        correct_iptp_target_pop = (
+            correct_iptp_pop_location_1001 + correct_iptp_pop_location_1002
+        )
+        correct_iptp_cost = (
+            correct_iptp_target_pop * 0.8 * 3 * 1.1 * 0.50558094
+        )  # mutliplied by usd_cost
+
+        correct_iptp_cost_location_1001 = (
+            correct_iptp_pop_location_1001 * 0.8 * 3 * 1.1 * 0.50558094
+        )
+        correct_iptp_cost_location_1002 = (
+            correct_iptp_pop_location_1002 * 0.8 * 3 * 1.1 * 0.50558094
+        )
+
+        self.assertAlmostEqual(iptp["total_pop"], correct_iptp_target_pop)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
+        self.assertEqual(len(iptp["cost_breakdown"]), 1)
+        self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
+
+        correct_smc_target_pop = (
+            POP_1_2
+            * (
+                DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_3_11"]
+                + DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
+            )
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+        ) * 2.5  # Doubled for location 1002
+
+        correct_smc_cost_3_11 = (
+            0.29
+            * POP_1_2
+            * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_3_11"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_monthly_rounds"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
+        ) * 2.5  # Doubled for location 1002
+        correct_smc_cost_12_59 = (
+            0.35
+            * POP_1_2
+            * DEFAULT_COST_ASSUMPTIONS["smc_pop_prop_12_59"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_coverage"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_monthly_rounds"]
+            * DEFAULT_COST_ASSUMPTIONS["smc_buffer_mult"]
+        ) * 2.5  # Doubled for location 1002
 
         correct_smc_cost = correct_smc_cost_3_11 + correct_smc_cost_12_59
 
