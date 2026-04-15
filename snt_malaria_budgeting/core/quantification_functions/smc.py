@@ -19,7 +19,7 @@ class SMCQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate SMC (Seasonal Malaria Chemoprevention) quantification requirements.
         This method computes the required quantities of SPAQ (Sulfadoxine-Pyrimethamine + Amodiaquine)
@@ -27,9 +27,11 @@ class SMCQuantification(BaseQuantification):
         rounds of treatment.
         Parameters
         ----------
-        scen_data : dict or DataFrame
-            Scenario data containing population and intervention-related information.
-        target_population : int or str
+        df : pd.DataFrame
+            DataFrame containing the filtered and merged scenario and target population data.
+        Returns
+        -------
+        pd.DataFrame
             The target population identifier or value used to filter/process scenario data.
         Returns
         -------
@@ -55,12 +57,6 @@ class SMCQuantification(BaseQuantification):
         - Number of monthly rounds
         - Buffer multiplier for safety stock
         """
-
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
 
         target_pop_raw = self._get_sum_target_population_(df)
 

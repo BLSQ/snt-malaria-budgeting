@@ -15,7 +15,7 @@ class ItnRoutineQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of ITN (Insecticide-Treated Net) interventions.
         This method computes the number of ITNs needed based on target population,
@@ -51,11 +51,6 @@ class ItnRoutineQuantification(BaseQuantification):
 
         # --- Quantification (Partner Guide: 4.3) ---
         # Get population of interest (e.g., children under 5 or pregnant
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
 
         target_pop_raw = self._get_sum_target_population_(df)
         return df.assign(

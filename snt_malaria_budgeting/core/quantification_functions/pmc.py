@@ -29,15 +29,14 @@ class PMCQuantification(BaseQuantification):
             )
         return super()._validate_assumptions_()
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of preventive medicine doses for malaria-affected populations.
         This method computes the required quantity of seasonal preventive chemotherapy (SP) tablets
         based on population segments (children 0-1 years and 1-2 years), coverage rates, touchpoints,
         and dosage factors.
         Args:
-            scen_data: Dictionary containing scenario-specific data for quantification calculations.
-            target_population: The target population data used to filter and process the base dataframe.
+            df: DataFrame containing the filtered and merged scenario and target population data.
         Returns:
             pd.DataFrame: A dataframe with the following columns:
                 - quantity: Total number of SP tablets required (sum of sp_0_1 and sp_1_2)
@@ -51,13 +50,6 @@ class PMCQuantification(BaseQuantification):
             - Children 1-2 years receive 2 doses per touchpoint (sp_1_2)
             - Calculations include coverage, touchpoints, tablet_factor, and buffer multiplier assumptions
         """
-
-        # TODO, I think this could be moved to based class
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_df_(df)
 
         pop_df = self._get_target_population_df_(df)
 

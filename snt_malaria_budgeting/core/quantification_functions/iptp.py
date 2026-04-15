@@ -17,7 +17,7 @@ class IPTPQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of IPTp (Intermittent Preventive Treatment in pregnancy) doses.
 
@@ -25,8 +25,7 @@ class IPTPQuantification(BaseQuantification):
         doses per pregnant women, and buffer multiplier assumptions.
 
         Args:
-            scen_data: Scenario data containing relevant assumptions and parameters.
-            target_population: Target population class or identifier for which to calculate quantification.
+            df: DataFrame containing the filtered and merged scenario and target population data.
 
         Returns:
             pd.DataFrame: DataFrame with calculated quantification including columns:
@@ -38,11 +37,6 @@ class IPTPQuantification(BaseQuantification):
 
             Returns an empty DataFrame if base data is empty.
         """
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
 
         sum_target_pop = self._get_sum_target_population_(df)
 

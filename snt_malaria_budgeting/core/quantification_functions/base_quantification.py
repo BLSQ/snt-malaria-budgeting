@@ -18,7 +18,16 @@ class BaseQuantification:
         self.default_pop_col = default_pop_col
         self.required_assumptions = required_assumptions
 
-    def get_quantification(self, scen_data, target_population, all_quantifications):
+    def get_quantification(self, scen_data, target_population):
+        df = self._get_base_df_(scen_data, target_population)
+        if df.empty:
+            return pd.DataFrame()
+
+        self._validate_df_(df)
+
+        return self._get_quantification_(df)
+
+    def _get_quantification_(self, df):
         raise NotImplementedError("Subclasses must implement this method")
 
     def _get_base_df_(self, scen_data, target_population):
@@ -95,6 +104,9 @@ class BaseQuantification:
         )
 
         return df
+
+    def _validate_df_(self, df):
+        self._validate_assumptions_()
 
     def _validate_assumptions_(self):
         missing_assumptions = [

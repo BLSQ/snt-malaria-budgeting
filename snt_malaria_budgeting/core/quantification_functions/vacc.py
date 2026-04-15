@@ -19,14 +19,13 @@ class VaccQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate quantification metrics for vaccination interventions.
         This method computes the required doses and target child population for a vaccination
         intervention based on scenario data, coverage assumptions, and dosing parameters.
         Args:
-            scen_data: Scenario data containing relevant parameters and context for the calculation.
-            target_population: The target population segment for which to calculate quantification.
+            df: DataFrame containing the filtered and merged scenario and target population data.
         Returns:
             pd.DataFrame: A long-format DataFrame containing quantification results with the following columns:
                 - All columns from the base dataframe (except those starting with "quant_")
@@ -42,12 +41,6 @@ class VaccQuantification(BaseQuantification):
             - Converts wide format (quant_doses, quant_child) to long format for easier analysis
             - Buffer multiplier accounts for waste and contingency in dose calculations
         """
-
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
 
         target_pop_raw = self._get_sum_target_population_(df)
 
