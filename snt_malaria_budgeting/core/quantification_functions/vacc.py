@@ -1,5 +1,3 @@
-import pandas as pd
-
 from snt_malaria_budgeting.core.quantification_functions.base_quantification import (
     BaseQuantification,
 )

@@ -1,4 +1,3 @@
-import pandas as pd
 from .base_quantification import BaseQuantification
 
 
