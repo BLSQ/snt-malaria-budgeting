@@ -74,8 +74,6 @@ print(budgets)
 - **target_population_columns**: (Optional) List of population columns to use for quantification (e.g., ["pop_total"], ["pop_0_5", "pop_pw"])
 
 
-**Default target population columns by intervention:**
-
 **Default Target Population & Required Cost Units by Intervention:**
 
 | Intervention Code | Default Target Population Column(s) | Required Cost Unit(s)                |
@@ -91,11 +89,6 @@ print(budgets)
 > **Note:**
 > - The `unit` column in your `cost_df` must match the required cost unit(s) for each intervention code above.
 > - Some interventions (like SMC and Vacc) require multiple units for different age groups or quantification types.
-
-> **Note:**
-> - The `unit` column in your `cost_df` must match the required cost unit(s) for each intervention code above.
-> - Some interventions (like SMC and Vacc) require multiple units for different age groups or quantification types.
-
 
 
 ### 2. `settings` (Dictionary)

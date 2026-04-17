@@ -134,11 +134,35 @@ class TestPMCQuantification(unittest.TestCase):
             + self.mock_population_data["pop_1_2_custom"][0] * 0.5,
         )
 
-    def test_pmc_quantitification_invalid_target_population_columns(self):
+    def test_pmc_quantitification_to_few_target_population_columns(self):
         """Test that PMCQuantification raises an error when target_population_columns does not contain exactly 2 items."""
 
         scen_data_invalid_pop_cols = self.scen_data.copy()
         scen_data_invalid_pop_cols["target_population_columns_pmc"] = [["pop_0_1"]]
+
+        quant = PMCQuantification(
+            spatial_unit="adm2",
+            assumptions={
+                "pmc_coverage": 0.5,
+                "pmc_touchpoints": 1.5,
+                "pmc_tablet_factor": 1.1,
+                "pmc_buffer_mult": 1.1,
+            },
+        )
+        with self.assertRaisesRegex(
+            ValueError, r"target_population_columns_pmc must contain exactly 2 items"
+        ):
+            quant.get_quantification(
+                scen_data_invalid_pop_cols, self.mock_population_data
+            )
+
+    def test_pmc_quantitification_too_many_target_population_columns(self):
+        """Test that PMCQuantification raises an error when target_population_columns contains more than 2 items."""
+
+        scen_data_invalid_pop_cols = self.scen_data.copy()
+        scen_data_invalid_pop_cols["target_population_columns_pmc"] = [
+            ["pop_0_1", "pop_1_2", "pop_0_1_custom"]
+        ]
 
         quant = PMCQuantification(
             spatial_unit="adm2",

@@ -600,6 +600,8 @@ class TestGetBudget(unittest.TestCase):
         self.assertEqual(len(places_costs), 2)
         unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
         self.assertEqual(unknown["code"], "unknown")
+        # This cost from uknown intervention, taking the total population for place 1001 assigned: 250000
+        # multiplied by the default unknown intervention cost per person of 3 usd, and then multiplied by the default buffer of 1
         self.assertEqual(unknown["total_cost"], 750000)
         self.assertEqual(unknown["total_pop"], POP_TOTAL)
         self.assertEqual(len(unknown["cost_breakdown"]), 1)
@@ -817,9 +819,11 @@ class TestGetBudget(unittest.TestCase):
 
         self.assertEqual(len(interventions_costs), 3)
 
-        iptp = next(i for i in interventions_costs if i["type"] == "SP")
-        smc = next(i for i in interventions_costs if i["type"] == "SP+AQ")
-        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
+        interventions_reults = {i["type"]: i for i in interventions_costs}
+
+        iptp = interventions_reults["SP"]
+        smc = interventions_reults["SP+AQ"]
+        unknown = interventions_reults["NKWN"]
 
         correct_iptp_pop_location_1001 = POP_0_1 * 1.5
         correct_iptp_pop_location_1002 = POP_0_1 * 2.5
@@ -881,16 +885,16 @@ class TestGetBudget(unittest.TestCase):
         self.assertEqual(smc["cost_breakdown"][0]["cost_class"], "Commodity")
         self.assertAlmostEqual(smc["cost_breakdown"][0]["cost"], correct_smc_cost)
 
-        unknown = next(i for i in interventions_costs if i["type"] == "NKWN")
         self.assertEqual(unknown["total_pop"], 0)
         self.assertEqual(unknown["total_cost"], 0)
         self.assertEqual(unknown["type"], "NKWN")
         self.assertEqual(unknown["code"], "unknown")
         self.assertEqual(len(unknown["cost_breakdown"]), 0)
 
-        place_1001 = next(
-            place_cost for place_cost in places_costs if place_cost["place"] == 1001
-        )
+        places_result = {p["place"]: p for p in places_costs}
+
+        place_1001 = places_result[1001]
+        place_1002 = places_result[1002]
         self.assertAlmostEqual(
             place_1001["total_cost"], correct_iptp_cost_location_1001
         )
@@ -907,9 +911,6 @@ class TestGetBudget(unittest.TestCase):
             place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost_location_1001
         )
 
-        place_1002 = next(
-            place_cost for place_cost in places_costs if place_cost["place"] == 1002
-        )
         self.assertAlmostEqual(
             place_1002["total_cost"], correct_iptp_cost_location_1002 + correct_smc_cost
         )
