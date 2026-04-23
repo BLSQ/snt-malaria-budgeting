@@ -183,6 +183,9 @@ class BudgetCalculator:
     def _set_intervention_scen_data(self, budget_code, interventions, scen_df):
         code_column = f"code_{budget_code}"
         type_column = f"type_{budget_code}"
+        intervention_target_population_column = (
+            f"target_population_columns_{budget_code}"
+        )
 
         for intervention in interventions:
             intervention_places = intervention.places
@@ -192,6 +195,13 @@ class BudgetCalculator:
             mask = scen_df[self.spatial_planning_unit].isin(intervention_places)
             scen_df.loc[mask, code_column] = 1
             scen_df.loc[mask, type_column] = intervention_type
+            scen_df.loc[mask, intervention_target_population_column] = None
+
+            if intervention.target_population_columns:
+                scen_df.loc[mask, intervention_target_population_column] = pd.Series(
+                    [intervention.target_population_columns] * len(scen_df[mask]),
+                    index=scen_df[mask].index,
+                )
 
     def _get_scenario_dataframe(
         self,

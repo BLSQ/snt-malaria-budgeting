@@ -44,6 +44,7 @@ class InterventionDetailModel(BaseModel):
     type: str
     code: str
     places: List[Union[str, int]]
+    target_population_columns: List[str] = Field(default_factory=list)
 
 
 class CostItems(BaseModel):

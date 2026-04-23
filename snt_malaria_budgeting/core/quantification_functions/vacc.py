@@ -1,5 +1,3 @@
-import pandas as pd
-
 from snt_malaria_budgeting.core.quantification_functions.base_quantification import (
     BaseQuantification,
 )
@@ -11,7 +9,6 @@ class VaccQuantification(BaseQuantification):
             "vacc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="Vaccine: target population",
             default_pop_col=["pop_vaccine_5_36_months"],
             required_assumptions=[
                 "vacc_coverage",
@@ -20,14 +17,13 @@ class VaccQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate quantification metrics for vaccination interventions.
         This method computes the required doses and target child population for a vaccination
         intervention based on scenario data, coverage assumptions, and dosing parameters.
         Args:
-            scen_data: Scenario data containing relevant parameters and context for the calculation.
-            target_population: The target population segment for which to calculate quantification.
+            df: DataFrame containing the filtered and merged scenario and target population data.
         Returns:
             pd.DataFrame: A long-format DataFrame containing quantification results with the following columns:
                 - All columns from the base dataframe (except those starting with "quant_")
@@ -44,18 +40,14 @@ class VaccQuantification(BaseQuantification):
             - Buffer multiplier accounts for waste and contingency in dose calculations
         """
 
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
+        target_pop_raw = self._get_sum_target_population_(df)
 
         df = df.assign(
-            quant_doses=df[self.pop_col[0]]
+            quant_doses=target_pop_raw
             * self.assumptions[f"{self.code}_coverage"]
             * self.assumptions[f"{self.code}_doses_per_child"]
             * self.assumptions[f"{self.code}_buffer_mult"],
-            quant_child=df[self.pop_col[0]] * self.assumptions[f"{self.code}_coverage"],
+            quant_child=target_pop_raw * self.assumptions[f"{self.code}_coverage"],
         ).assign(
             target_pop=lambda x: x.quant_child,
             code_intervention=self.code,

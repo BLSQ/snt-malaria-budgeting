@@ -1,5 +1,3 @@
-import pandas as pd
-
 from .base_quantification import BaseQuantification
 
 
@@ -9,7 +7,6 @@ class IPTPQuantification(BaseQuantification):
             "iptp",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="IPTp: target population",
             default_pop_col=["pop_pw"],
             required_assumptions=[
                 "iptp_anc_coverage",
@@ -18,7 +15,7 @@ class IPTPQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of IPTp (Intermittent Preventive Treatment in pregnancy) doses.
 
@@ -26,8 +23,7 @@ class IPTPQuantification(BaseQuantification):
         doses per pregnant women, and buffer multiplier assumptions.
 
         Args:
-            scen_data: Scenario data containing relevant assumptions and parameters.
-            target_population: Target population class or identifier for which to calculate quantification.
+            df: DataFrame containing the filtered and merged scenario and target population data.
 
         Returns:
             pd.DataFrame: DataFrame with calculated quantification including columns:
@@ -39,19 +35,16 @@ class IPTPQuantification(BaseQuantification):
 
             Returns an empty DataFrame if base data is empty.
         """
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
 
-        self._validate_assumptions_()
+        sum_target_pop = self._get_sum_target_population_(df)
 
         return df.assign(
             quantity=(
-                (df[self.pop_col[0]] * self.assumptions[f"{self.code}_anc_coverage"])
+                (sum_target_pop * self.assumptions[f"{self.code}_anc_coverage"])
                 * self.assumptions[f"{self.code}_doses_per_pw"]
             )
             * self.assumptions[f"{self.code}_buffer_mult"],
-            target_pop=df[self.pop_col[0]],
+            target_pop=sum_target_pop,
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
             unit="per SP",

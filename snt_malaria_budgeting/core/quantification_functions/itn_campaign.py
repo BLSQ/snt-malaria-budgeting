@@ -1,4 +1,3 @@
-import pandas as pd
 from .base_quantification import BaseQuantification
 
 
@@ -8,7 +7,6 @@ class ItnCampaignQuantification(BaseQuantification):
             "itn_campaign",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="ITN Campaign: target population",
             default_pop_col=["pop_total"],
             required_assumptions=[
                 "itn_campaign_coverage",
@@ -18,7 +16,7 @@ class ItnCampaignQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate ITN (Insecticide-Treated Net) quantification based on scenario data and target population.
 
@@ -26,8 +24,7 @@ class ItnCampaignQuantification(BaseQuantification):
         applying coverage rates, divisor factors, and buffer multipliers from assumptions.
 
         Args:
-            scen_data: Scenario data containing configuration and parameters for the calculation.
-            target_population: Population data used to determine the baseline for quantification.
+            df: DataFrame containing the filtered and merged scenario and target population data.
 
         Returns:
             pd.DataFrame: A long-format DataFrame containing quantification data with columns:
@@ -43,13 +40,7 @@ class ItnCampaignQuantification(BaseQuantification):
             - Uses assumption keys: `{code}_coverage`, `{code}_divisor`, `{code}_buffer_mult`, `{code}_bale_size`
         """
 
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
-
-        target_pop_raw = df[self.pop_col].sum(axis=1)
+        target_pop_raw = self._get_sum_target_population_(df)
 
         df = df.assign(
             quant_nets=(

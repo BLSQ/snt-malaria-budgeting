@@ -1,5 +1,3 @@
-import pandas as pd
-
 from .base_quantification import BaseQuantification
 
 
@@ -9,7 +7,6 @@ class PMCQuantification(BaseQuantification):
             "pmc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="PMC: target population",
             default_pop_col=["pop_0_1", "pop_1_2"],
             required_assumptions=[
                 "pmc_coverage",
@@ -19,15 +16,25 @@ class PMCQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _validate_df_(self, df):
+        if (
+            not df[f"target_population_columns_{self.code}"]
+            .apply(lambda x: len(x) == 2)
+            .all()
+        ):
+            raise ValueError(
+                f"target_population_columns_{self.code} must contain exactly 2 items"
+            )
+        return super()._validate_assumptions_()
+
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of preventive medicine doses for malaria-affected populations.
         This method computes the required quantity of seasonal preventive chemotherapy (SP) tablets
         based on population segments (children 0-1 years and 1-2 years), coverage rates, touchpoints,
         and dosage factors.
         Args:
-            scen_data: Dictionary containing scenario-specific data for quantification calculations.
-            target_population: The target population data used to filter and process the base dataframe.
+            df: DataFrame containing the filtered and merged scenario and target population data.
         Returns:
             pd.DataFrame: A dataframe with the following columns:
                 - quantity: Total number of SP tablets required (sum of sp_0_1 and sp_1_2)
@@ -42,14 +49,10 @@ class PMCQuantification(BaseQuantification):
             - Calculations include coverage, touchpoints, tablet_factor, and buffer multiplier assumptions
         """
 
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
+        pop_df = self._get_target_population_df_(df)
 
-        self._validate_assumptions_()
-
-        pop_0_1 = df[self.pop_col[0]]
-        pop_1_2 = df[self.pop_col[1]]
+        pop_0_1 = pop_df.iloc[:, 0]
+        pop_1_2 = pop_df.iloc[:, 1]
 
         sp_0_1 = (
             pop_0_1

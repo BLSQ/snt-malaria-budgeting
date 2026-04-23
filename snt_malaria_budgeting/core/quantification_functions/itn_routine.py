@@ -1,4 +1,3 @@
-import pandas as pd
 from .base_quantification import BaseQuantification
 
 
@@ -8,7 +7,6 @@ class ItnRoutineQuantification(BaseQuantification):
             "itn_routine",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="ITN Routine: target population",
             default_pop_col=["pop_0_5", "pop_pw"],
             required_assumptions=[
                 "itn_routine_coverage",
@@ -16,7 +14,7 @@ class ItnRoutineQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate the quantification of ITN (Insecticide-Treated Net) interventions.
         This method computes the number of ITNs needed based on target population,
@@ -52,17 +50,13 @@ class ItnRoutineQuantification(BaseQuantification):
 
         # --- Quantification (Partner Guide: 4.3) ---
         # Get population of interest (e.g., children under 5 or pregnant
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
 
-        self._validate_assumptions_()
-
-        df["target_pop"] = df[self.pop_col].sum(axis=1)
+        target_pop_raw = self._get_sum_target_population_(df)
         return df.assign(
-            quantity=(df["target_pop"] * self.assumptions[f"{self.code}_coverage"])
+            quantity=(target_pop_raw * self.assumptions[f"{self.code}_coverage"])
             * self.assumptions[f"{self.code}_buffer_mult"],
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
             unit="per ITN",
+            target_pop=target_pop_raw,
         )

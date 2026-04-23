@@ -34,6 +34,8 @@ class TestDefaultQuantification(unittest.TestCase):
                 "adm2": [admin2],
                 "year": [year],
                 "pop_total": [342988.7383],
+                "pop_total_custom": [342988.7383],
+                "pop_total_custom_2": [342988.7383],
             }
         )
 
@@ -82,6 +84,72 @@ class TestDefaultQuantification(unittest.TestCase):
         self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
         self.assertAlmostEqual(
             result["target_pop"].iloc[0], self.mock_population_data["pop_total"][0]
+        )
+        self.assertEqual(result["code_intervention"].iloc[0], "something")
+        self.assertEqual(result["type_intervention"].iloc[0], "SMTH")
+        self.assertEqual(result["unit"].iloc[0], "Other")
+
+    def test_default_quantification_override_pop_column(self):
+        """Test that DefaultQuantification returns expected results for a known code with overridden population column."""
+
+        quant = DefaultQuantification(
+            code="something",
+            spatial_unit="adm2",
+            assumptions={"something_coverage": 0.5},
+        )
+        scen_data = self.scen_data.copy()
+        scen_data[f"target_population_columns_{quant.code}"] = [["pop_total_custom"]]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = self.mock_population_data["pop_total_custom"][0] * 0.5
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
+        self.assertAlmostEqual(
+            result["target_pop"].iloc[0],
+            self.mock_population_data["pop_total_custom"][0],
+        )
+        self.assertEqual(result["code_intervention"].iloc[0], "something")
+        self.assertEqual(result["type_intervention"].iloc[0], "SMTH")
+        self.assertEqual(result["unit"].iloc[0], "Other")
+
+    def test_default_quantification_override_pop_column_many(self):
+        """Test that DefaultQuantification returns expected results for a known code with overridden population column."""
+
+        quant = DefaultQuantification(
+            code="something",
+            spatial_unit="adm2",
+            assumptions={"something_coverage": 0.5},
+        )
+        scen_data = self.scen_data.copy()
+        scen_data[f"target_population_columns_{quant.code}"] = [
+            ["pop_total_custom", "pop_total_custom_2"]
+        ]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = (
+            self.mock_population_data["pop_total_custom"][0]
+            + self.mock_population_data["pop_total_custom_2"][0]
+        ) * 0.5
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
+        self.assertAlmostEqual(
+            result["target_pop"].iloc[0],
+            self.mock_population_data["pop_total_custom"][0]
+            + self.mock_population_data["pop_total_custom_2"][0],
         )
         self.assertEqual(result["code_intervention"].iloc[0], "something")
         self.assertEqual(result["type_intervention"].iloc[0], "SMTH")

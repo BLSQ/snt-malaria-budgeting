@@ -46,6 +46,7 @@ budget_calculator = BudgetCalculator(
     local_currency="EUR",
     spatial_planning_unit="key",
     cost_overrides=[], # optional
+    unknown_intervention_handling="ignore", #optional can be: ignore, handle or error
 
 )
 
@@ -62,6 +63,69 @@ for year in range(start_year, end_year + 1):
 print(budgets)
 
 ```
+
+
+## Input Definitions
+
+### 1. `interventions_input` (List of `InterventionDetailModel`)
+- **code**: Intervention code (e.g., "iptp", "smc", etc.)
+- **type**: Unique identifier for the intervention within a code (e.g., "SP", "SP+AQ")
+- **places**: List of place IDs assigned to the intervention
+- **target_population_columns**: (Optional) List of population columns to use for quantification (e.g., ["pop_total"], ["pop_0_5", "pop_pw"])
+
+
+**Default Target Population & Required Cost Units by Intervention:**
+
+| Intervention Code | Default Target Population Column(s) | Required Cost Unit(s)                |
+|-------------------|--------------------------------------|--------------------------------------|
+| itn_campaign      | pop_total                            | per ITN, per bale                    |
+| itn_routine       | pop_0_5, pop_pw                      | per ITN                              |
+| iptp              | pop_pw                               | per SP                               |
+| smc               | pop_0_5                              | per SPAQ pack 3-11 month olds,<br>per SPAQ pack 12-59 month olds |
+| pmc               | pop_0_1, pop_1_2                     | per SP                               |
+| vacc              | pop_vaccine_5_36_months              | per dose, per child                  |
+| default           | pop_total                            | Other                                |
+
+> **Note:**
+> - The `unit` column in your `cost_df` must match the required cost unit(s) for each intervention code above.
+> - Some interventions (like SMC and Vacc) require multiple units for different age groups or quantification types.
+
+
+### 2. `settings` (Dictionary)
+Dictionary of cost and quantification assumptions. Defaults are provided in `DEFAULT_COST_ASSUMPTIONS` (see models.py).
+
+### 3. `cost_df` (DataFrame)
+DataFrame of unit costs, with columns such as:
+- code_intervention
+- type_intervention
+- cost_class
+- unit
+- ngn_cost
+- usd_cost
+- cost_year
+
+### 4. `population_df` (DataFrame)
+DataFrame with population data by place and year, with columns:
+- org_unit_id: Place ID
+- year: Year
+- Population columns: e.g., pop_total, pop_0_5, pop_pw, etc.
+
+If `target_population_columns` is not specified in the intervention, the default columns above are used.
+
+### 5. `local_currency` (str)
+The local currency symbol (e.g., "NGN", "EUR").
+
+### 6. `spatial_planning_unit` (str)
+The column name in `population_df` that identifies the spatial unit (e.g., "org_unit_id").
+
+### 7. `budget_currency` (str, optional)
+The currency for the budget output. Defaults to `local_currency`.
+
+### 8. `cost_overrides` (Optional[List[CostItems]])
+List of cost override items (see `CostItems` model).
+
+### 9. `unknown_intervention_handling` (str, optional)
+How to handle unknown interventions: "ignore", "handle", or "error".
 
 ## Development
 

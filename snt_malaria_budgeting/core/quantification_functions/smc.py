@@ -1,5 +1,3 @@
-import pandas as pd
-
 from .base_quantification import BaseQuantification
 
 
@@ -9,7 +7,6 @@ class SMCQuantification(BaseQuantification):
             "smc",
             spatial_unit,
             assumptions=assumptions,
-            label_pop_col="SMC: target population",
             default_pop_col=["pop_0_5"],
             required_assumptions=[
                 "smc_coverage",
@@ -20,7 +17,7 @@ class SMCQuantification(BaseQuantification):
             ],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate SMC (Seasonal Malaria Chemoprevention) quantification requirements.
         This method computes the required quantities of SPAQ (Sulfadoxine-Pyrimethamine + Amodiaquine)
@@ -28,9 +25,11 @@ class SMCQuantification(BaseQuantification):
         rounds of treatment.
         Parameters
         ----------
-        scen_data : dict or DataFrame
-            Scenario data containing population and intervention-related information.
-        target_population : int or str
+        df : pd.DataFrame
+            DataFrame containing the filtered and merged scenario and target population data.
+        Returns
+        -------
+        pd.DataFrame
             The target population identifier or value used to filter/process scenario data.
         Returns
         -------
@@ -57,27 +56,23 @@ class SMCQuantification(BaseQuantification):
         - Buffer multiplier for safety stock
         """
 
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
-        self._validate_assumptions_()
+        target_pop_raw = self._get_sum_target_population_(df)
 
         df = df.assign(
             quant_smc_3_11_months=(
-                (df[self.pop_col[0]] * self.assumptions[f"{self.code}_pop_prop_3_11"])
+                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_3_11"])
                 * self.assumptions[f"{self.code}_coverage"]
             )
             * self.assumptions[f"{self.code}_monthly_rounds"]
             * self.assumptions[f"{self.code}_buffer_mult"],
             quant_smc_12_59_months=(
-                (df[self.pop_col[0]] * self.assumptions[f"{self.code}_pop_prop_12_59"])
+                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_12_59"])
                 * self.assumptions[f"{self.code}_coverage"]
             )
             * self.assumptions[f"{self.code}_monthly_rounds"]
             * self.assumptions[f"{self.code}_buffer_mult"],
             target_pop=(
-                df[self.pop_col[0]]
+                target_pop_raw
                 * (
                     self.assumptions[f"{self.code}_pop_prop_3_11"]
                     + self.assumptions[f"{self.code}_pop_prop_12_59"]

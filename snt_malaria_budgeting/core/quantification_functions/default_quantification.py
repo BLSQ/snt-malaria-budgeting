@@ -1,5 +1,3 @@
-import pandas as pd
-
 from .base_quantification import BaseQuantification
 
 
@@ -12,7 +10,7 @@ class DefaultQuantification(BaseQuantification):
             default_pop_col=["pop_total"],
         )
 
-    def get_quantification(self, scen_data, target_population):
+    def _get_quantification_(self, df):
         """
         Calculate quantification for an intervention based on scenario data and target population.
 
@@ -20,8 +18,7 @@ class DefaultQuantification(BaseQuantification):
         with calculated quantities and metadata for the intervention.
 
         Args:
-            scen_data: Scenario data containing information needed to build the base DataFrame.
-            target_population: Target population parameters for quantification calculation.
+            df: DataFrame containing the filtered and merged scenario and target population data.
 
         Returns:
             pd.DataFrame: A DataFrame containing quantification results with columns:
@@ -37,17 +34,15 @@ class DefaultQuantification(BaseQuantification):
               falling back to "default_coverage" (default: 0.8) if not found.
             - The unit field defaults to "none" and is used internally for cost class determination.
         """
-        df = self._get_base_df_(scen_data, target_population)
-        if df.empty:
-            return pd.DataFrame()
-
         coverage = self.assumptions.get(
             f"{self.code}_coverage", self.assumptions.get("default_coverage", 1)
         )
 
+        target_pop_sum = self._get_sum_target_population_(df)
+
         return df.assign(
-            quantity=(df[self.pop_col[0]] * coverage),
-            target_pop=df[self.pop_col[0]],
+            quantity=target_pop_sum * coverage,
+            target_pop=target_pop_sum,
             code_intervention=self.code,
             type_intervention=df[f"type_{self.code}"],
             unit="Other",  # This is a tricky one, it is used to know which cost class we should use but for default, we don't have any
