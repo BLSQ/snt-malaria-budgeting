@@ -72,7 +72,11 @@ class BaseQuantification:
 
         df[f"target_population_columns_{self.code}"] = df[
             f"target_population_columns_{self.code}"
-        ].apply(lambda x: x if x is not None else self.default_pop_col)
+        ].apply(
+            lambda x: x
+            if x is not None and isinstance(x, list) and len(x) > 0
+            else self.default_pop_col
+        )
 
         # Get all columns from target_population_columns
         target_population_columns = list(
