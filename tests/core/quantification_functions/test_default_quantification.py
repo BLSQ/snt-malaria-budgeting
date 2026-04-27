@@ -119,6 +119,35 @@ class TestDefaultQuantification(unittest.TestCase):
         self.assertEqual(result["type_intervention"].iloc[0], "SMTH")
         self.assertEqual(result["unit"].iloc[0], "Other")
 
+    def test_default_quantification_override_pop_column_NaN(self):
+        """Test that DefaultQuantification returns expected results when target_population_columns is NaN."""
+
+        quant = DefaultQuantification(
+            code="something",
+            spatial_unit="adm2",
+            assumptions={"something_coverage": 0.5},
+        )
+        scen_data = self.scen_data.copy()
+        scen_data[f"target_population_columns_{quant.code}"] = [pd.NA]
+        result = quant.get_quantification(scen_data, self.mock_population_data)
+
+        expected_quantity = self.mock_population_data["pop_total"][0] * 0.5
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("quantity", result.columns)
+        self.assertIn("target_pop", result.columns)
+        self.assertIn("code_intervention", result.columns)
+        self.assertIn("type_intervention", result.columns)
+        self.assertIn("unit", result.columns)
+
+        self.assertAlmostEqual(result["quantity"].iloc[0], expected_quantity)
+        self.assertAlmostEqual(
+            result["target_pop"].iloc[0], self.mock_population_data["pop_total"][0]
+        )
+        self.assertEqual(result["code_intervention"].iloc[0], "something")
+        self.assertEqual(result["type_intervention"].iloc[0], "SMTH")
+        self.assertEqual(result["unit"].iloc[0], "Other")
+
     def test_default_quantification_override_pop_column_many(self):
         """Test that DefaultQuantification returns expected results for a known code with overridden population column."""
 
