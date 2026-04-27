@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.9.0...v0.9.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* Verify that instance of target population is a list or use default ([#49](https://github.com/BLSQ/snt-malaria-budgeting/issues/49)) ([ddf4538](https://github.com/BLSQ/snt-malaria-budgeting/commit/ddf453859b398cee12e4220c53b6574786aa5a57))
+
 ## [0.9.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.8.0...v0.9.0) (2026-04-23)
 
 
