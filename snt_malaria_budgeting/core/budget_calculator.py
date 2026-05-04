@@ -1,7 +1,12 @@
 from typing import Dict, List, Any, Optional
 
 import pandas as pd
-from ..models import InterventionDetailModel, CostItems, UnknownInterventionHandling
+from ..models import (
+    InterventionDetailModel,
+    CostItems,
+    UnknownInterventionHandling,
+    DEFAULT_COST_ASSUMPTIONS,
+)
 from .PATH_generate_budget import generate_budget
 
 
@@ -9,7 +14,7 @@ class BudgetCalculator:
     def __init__(
         self,
         interventions_input: List[InterventionDetailModel],
-        settings: Dict[str, Any],
+        settings: Dict[int, Dict[str, Any]],
         cost_df: pd.DataFrame,
         population_df: pd.DataFrame,
         local_currency: str,
@@ -19,7 +24,7 @@ class BudgetCalculator:
         unknown_intervention_handling: UnknownInterventionHandling = UnknownInterventionHandling.IGNORE,
     ):
         self.interventions_input = interventions_input
-        self.settings = settings
+        self.settings = settings if settings is not None else {}
         self.cost_df = cost_df
         self.population_df = population_df
         self.local_currency = local_currency
@@ -50,7 +55,7 @@ class BudgetCalculator:
             scen_df=scen_df,
             cost_df=costs_for_year,
             target_population=pop_for_year,
-            assumptions=self.settings,
+            assumptions=self.settings.get(year, DEFAULT_COST_ASSUMPTIONS),
             spatial_planning_unit=self.spatial_planning_unit,
             local_currency_symbol=self.local_currency.upper(),
             unknown_intervention_handling=self.unknown_intervention_handling,
