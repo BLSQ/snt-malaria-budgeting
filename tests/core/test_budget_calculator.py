@@ -141,7 +141,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -204,7 +204,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -267,7 +267,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -342,7 +342,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -427,7 +427,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -513,7 +513,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -584,7 +584,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -634,7 +634,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -805,7 +805,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -977,7 +977,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -1075,7 +1075,7 @@ class TestGetBudget(unittest.TestCase):
 
         budget_calculator = BudgetCalculator(
             interventions_input=interventions,
-            settings=DEFAULT_COST_ASSUMPTIONS,
+            settings={2025: DEFAULT_COST_ASSUMPTIONS},
             cost_df=cost_df,
             population_df=self.population_df,
             local_currency="ngn",
@@ -1118,3 +1118,190 @@ class TestGetBudget(unittest.TestCase):
                 self.assertAlmostEqual(cost_breakdown["cost"], correct_operational_cost)
             else:
                 self.fail("Unexpected cost_class in itn_routine cost_breakdown")
+
+    def test_get_budget_no_settings(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": 2025,
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings={},
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
+        iptp = next(i for i in interventions_costs if i["type"] == "SP")
+
+        correct_target_pop = POP_PW
+        correct_iptp_cost = correct_target_pop * 0.8 * 3 * 1.1
+
+        # formula: pop * coverage * doses * buffer
+        self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
+        self.assertEqual(len(iptp["cost_breakdown"]), 1)
+        self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
+
+        place_1001 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1001
+        )
+        self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_1001["interventions"]), 1)
+        place_iptp = place_1001["interventions"][0]
+        self.assertEqual(place_iptp["type"], "SP")
+        self.assertEqual(place_iptp["code"], "iptp")
+        self.assertAlmostEqual(place_iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
+
+    def test_get_budget_settings_other_year(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": 2025,
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings={
+                2026: {
+                    "iptp_anc_coverage": 0.9,
+                    "iptp_doses_per_pw": 4,
+                    "iptp_buffer_mult": 1.2,
+                }
+            },  # settings provided but for a different year
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+
+        # It should use default assumptions for iptp: pop * coverage * doses * buffer
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
+
+        iptp = next(i for i in interventions_costs if i["type"] == "SP")
+
+        correct_target_pop = POP_PW
+        correct_iptp_cost = correct_target_pop * 0.8 * 3 * 1.1
+
+        # formula: pop * coverage * doses * buffer
+        self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
+        self.assertEqual(len(iptp["cost_breakdown"]), 1)
+        self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
+
+        place_1001 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1001
+        )
+        self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_1001["interventions"]), 1)
+        place_iptp = place_1001["interventions"][0]
+        self.assertEqual(place_iptp["type"], "SP")
+        self.assertEqual(place_iptp["code"], "iptp")
+        self.assertAlmostEqual(place_iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
+
+    def test_get_budget_settings_override_year(self):
+        interventions = [InterventionDetailModel(code="iptp", type="SP", places=[1001])]
+
+        cost_df = pd.DataFrame(
+            {
+                "code_intervention": ["iptp"],
+                "type_intervention": ["SP"],
+                "unit": ["per SP"],
+                "cost_class": ["Commodity"],
+                "cost_year_for_analysis": 2025,
+                "usd_cost": [0.50558094],
+                "local_currency_cost": [1],
+                "cost_name": ["test"],
+            }
+        )
+
+        budget_calculator = BudgetCalculator(
+            interventions_input=interventions,
+            settings={
+                2025: {
+                    "iptp_anc_coverage": 0.9,
+                    "iptp_doses_per_pw": 4,
+                    "iptp_buffer_mult": 1.2,
+                }
+            },  # settings provided for the same year
+            cost_df=cost_df,
+            population_df=self.population_df,
+            local_currency="ngn",
+            spatial_planning_unit="key",
+            unknown_intervention_handling=UnknownInterventionHandling.HANDLE,
+        )
+
+        # It should use default assumptions for iptp: pop * coverage * doses * buffer
+        interventions_costs = budget_calculator.get_interventions_costs(2025)
+        places_costs = budget_calculator.get_places_costs(2025)
+
+        iptp = next(i for i in interventions_costs if i["type"] == "SP")
+
+        correct_target_pop = POP_PW
+        correct_iptp_cost = correct_target_pop * 0.9 * 4 * 1.2
+
+        # formula: pop * coverage * doses * buffer
+        self.assertAlmostEqual(iptp["total_pop"], correct_target_pop)
+        self.assertAlmostEqual(iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(iptp["type"], "SP")
+        self.assertEqual(iptp["code"], "iptp")
+        self.assertEqual(len(iptp["cost_breakdown"]), 1)
+        self.assertEqual(iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(iptp["cost_breakdown"][0]["cost"], correct_iptp_cost)
+
+        place_1001 = next(
+            place_cost for place_cost in places_costs if place_cost["place"] == 1001
+        )
+        self.assertAlmostEqual(place_1001["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_1001["interventions"]), 1)
+        place_iptp = place_1001["interventions"][0]
+        self.assertEqual(place_iptp["type"], "SP")
+        self.assertEqual(place_iptp["code"], "iptp")
+        self.assertAlmostEqual(place_iptp["total_cost"], correct_iptp_cost)
+        self.assertEqual(len(place_iptp["cost_breakdown"]), 1)
+        self.assertEqual(place_iptp["cost_breakdown"][0]["cost_class"], "Commodity")
+        self.assertAlmostEqual(
+            place_iptp["cost_breakdown"][0]["cost"], correct_iptp_cost
+        )
