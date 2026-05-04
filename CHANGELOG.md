@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.9.1...v0.10.0) (2026-05-04)
+
+
+### Features
+
+* Change settings params to be per year. ([#51](https://github.com/BLSQ/snt-malaria-budgeting/issues/51)) ([a787c89](https://github.com/BLSQ/snt-malaria-budgeting/commit/a787c89bf3da36eb5cf5b7795fe8882dcc20d5ae))
+
 ## [0.9.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.9.0...v0.9.1) (2026-04-27)
 
 
