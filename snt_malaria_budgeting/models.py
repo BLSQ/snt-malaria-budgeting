@@ -6,6 +6,10 @@ DEFAULT_COST_ASSUMPTIONS = {
     "itn_campaign_bale_size": 50,
     "itn_campaign_buffer_mult": 1.1,
     "itn_campaign_coverage": 1.0,
+    "itn_school_divisor": 1.8,  # people per net
+    "itn_school_bale_size": 50,
+    "itn_school_buffer_mult": 1.1,
+    "itn_school_coverage": 1.0,
     "itn_routine_coverage": 0.3,
     "itn_routine_buffer_mult": 1.1,
     "iptp_anc_coverage": 0.8,

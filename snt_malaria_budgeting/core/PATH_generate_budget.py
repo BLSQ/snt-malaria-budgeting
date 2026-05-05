@@ -10,6 +10,7 @@ from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 from .quantification_functions import (
     ItnCampaignQuantification,
+    ItnSchoolQuantification,
     ItnRoutineQuantification,
     IPTPQuantification,
     PMCQuantification,
@@ -20,6 +21,7 @@ from .quantification_functions import (
 
 INTERVENTION_QUANTIFICATION_CLASSES = {
     "code_itn_campaign": ItnCampaignQuantification,
+    "code_itn_school": ItnSchoolQuantification,
     "code_itn_routine": ItnRoutineQuantification,
     "code_iptp": IPTPQuantification,
     "code_smc": SMCQuantification,
@@ -188,6 +190,7 @@ def generate_budget(
         "vacc": "Vaccine",
         "itn_routine": "Routine ITN",
         "itn_campaign": "Campaign ITN",
+        "itn_school": "School ITN",
         "smc": "SMC",
         "pmc": "PMC",
         "irs": "IRS",

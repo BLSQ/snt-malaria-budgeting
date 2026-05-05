@@ -1,4 +1,4 @@
-from .itn_campaign import ItnCampaignQuantification
+from .itn_campaign import ItnCampaignQuantification, ItnSchoolQuantification
 from .itn_routine import ItnRoutineQuantification
 from .iptp import IPTPQuantification
 from .smc import (
@@ -13,6 +13,7 @@ from .default_quantification import DefaultQuantification
 
 __all__ = [
     "ItnCampaignQuantification",
+    "ItnSchoolQuantification",
     "ItnRoutineQuantification",
     "IPTPQuantification",
     "SMCQuantification",
