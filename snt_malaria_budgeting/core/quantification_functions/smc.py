@@ -1,19 +1,19 @@
 from .base_quantification import BaseQuantification
 
 
-class SMCQuantification(BaseQuantification):
-    def __init__(self, spatial_unit, assumptions={}):
+class SMCBaseQuantification(BaseQuantification):
+    def __init__(self, code, spatial_unit, assumptions={}):
         super().__init__(
-            "smc",
+            code,
             spatial_unit,
             assumptions=assumptions,
             default_pop_col=["pop_0_5"],
             required_assumptions=[
-                "smc_coverage",
-                "smc_monthly_rounds",
-                "smc_buffer_mult",
-                "smc_pop_prop_3_11",
-                "smc_pop_prop_12_59",
+                f"{code}_coverage",
+                f"{code}_monthly_rounds",
+                f"{code}_buffer_mult",
+                f"{code}_pop_prop_3_11",
+                f"{code}_pop_prop_12_59",
             ],
         )
 
@@ -59,29 +59,32 @@ class SMCQuantification(BaseQuantification):
         target_pop_raw = self._get_sum_target_population_(df)
 
         df = df.assign(
-            quant_smc_3_11_months=(
-                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_3_11"])
-                * self.assumptions[f"{self.code}_coverage"]
-            )
-            * self.assumptions[f"{self.code}_monthly_rounds"]
-            * self.assumptions[f"{self.code}_buffer_mult"],
-            quant_smc_12_59_months=(
-                (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_12_59"])
-                * self.assumptions[f"{self.code}_coverage"]
-            )
-            * self.assumptions[f"{self.code}_monthly_rounds"]
-            * self.assumptions[f"{self.code}_buffer_mult"],
-            target_pop=(
-                target_pop_raw
-                * (
-                    self.assumptions[f"{self.code}_pop_prop_3_11"]
-                    + self.assumptions[f"{self.code}_pop_prop_12_59"]
+            **{
+                f"quant_{self.code}_3_11_months": (
+                    (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_3_11"])
+                    * self.assumptions[f"{self.code}_coverage"]
                 )
-            )
-            * self.assumptions[f"{self.code}_coverage"],
-            code_intervention=self.code,
-            type_intervention=df[f"type_{self.code}"],
+                * self.assumptions[f"{self.code}_monthly_rounds"]
+                * self.assumptions[f"{self.code}_buffer_mult"],
+                f"quant_{self.code}_12_59_months": (
+                    (target_pop_raw * self.assumptions[f"{self.code}_pop_prop_12_59"])
+                    * self.assumptions[f"{self.code}_coverage"]
+                )
+                * self.assumptions[f"{self.code}_monthly_rounds"]
+                * self.assumptions[f"{self.code}_buffer_mult"],
+                "target_pop": (
+                    target_pop_raw
+                    * (
+                        self.assumptions[f"{self.code}_pop_prop_3_11"]
+                        + self.assumptions[f"{self.code}_pop_prop_12_59"]
+                    )
+                )
+                * self.assumptions[f"{self.code}_coverage"],
+                "code_intervention": self.code,
+                "type_intervention": df[f"type_{self.code}"],
+            }
         )
+
         df_long = df.melt(
             id_vars=[c for c in df.columns if not c.startswith("quant_")],
             value_vars=[
@@ -97,3 +100,23 @@ class SMCQuantification(BaseQuantification):
         }
         df_long["unit"] = df_long["unit"].map(unit_map)
         return df_long
+
+
+class SMCQuantification(SMCBaseQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("smc", spatial_unit, assumptions)
+
+
+class SMC3Quantification(SMCBaseQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("smc_3", spatial_unit, assumptions)
+
+
+class SMC4Quantification(SMCBaseQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("smc_4", spatial_unit, assumptions)
+
+
+class SMC5Quantification(SMCBaseQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("smc_5", spatial_unit, assumptions)
