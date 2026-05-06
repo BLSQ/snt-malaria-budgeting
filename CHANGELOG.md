@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.10.0...v0.10.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* update itn school and smc interventions ([#53](https://github.com/BLSQ/snt-malaria-budgeting/issues/53)) ([1a29e85](https://github.com/BLSQ/snt-malaria-budgeting/commit/1a29e8597b7218b6a807094465f6a6ca8c4e49b5))
+
 ## [0.10.0](https://github.com/BLSQ/snt-malaria-budgeting/compare/v0.9.1...v0.10.0) (2026-05-04)
 
 
