@@ -1,10 +1,16 @@
 import pandas as pd
 from typing import Dict
 
+from snt_malaria_budgeting.core.quantification_functions.smc import (
+    SMC3Quantification,
+    SMC4Quantification,
+    SMC5Quantification,
+)
 from snt_malaria_budgeting.models import UnknownInterventionHandling
 
 from .quantification_functions import (
     ItnCampaignQuantification,
+    ItnSchoolQuantification,
     ItnRoutineQuantification,
     IPTPQuantification,
     PMCQuantification,
@@ -15,9 +21,13 @@ from .quantification_functions import (
 
 INTERVENTION_QUANTIFICATION_CLASSES = {
     "code_itn_campaign": ItnCampaignQuantification,
+    "code_itn_school": ItnSchoolQuantification,
     "code_itn_routine": ItnRoutineQuantification,
     "code_iptp": IPTPQuantification,
     "code_smc": SMCQuantification,
+    "code_smc_3": SMC3Quantification,
+    "code_smc_4": SMC4Quantification,
+    "code_smc_5": SMC5Quantification,
     "code_pmc": PMCQuantification,
     "code_vacc": VaccQuantification,
 }
@@ -180,6 +190,7 @@ def generate_budget(
         "vacc": "Vaccine",
         "itn_routine": "Routine ITN",
         "itn_campaign": "Campaign ITN",
+        "itn_school": "School ITN",
         "smc": "SMC",
         "pmc": "PMC",
         "irs": "IRS",

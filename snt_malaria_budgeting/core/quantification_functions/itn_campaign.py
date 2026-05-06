@@ -1,18 +1,18 @@
 from .base_quantification import BaseQuantification
 
 
-class ItnCampaignQuantification(BaseQuantification):
-    def __init__(self, spatial_unit, assumptions={}):
+class BaseItnCampaignQuantification(BaseQuantification):
+    def __init__(self, code, spatial_unit, assumptions={}):
         super().__init__(
-            "itn_campaign",
+            code,
             spatial_unit,
             assumptions=assumptions,
             default_pop_col=["pop_total"],
             required_assumptions=[
-                "itn_campaign_coverage",
-                "itn_campaign_divisor",
-                "itn_campaign_buffer_mult",
-                "itn_campaign_bale_size",
+                f"{code}_coverage",
+                f"{code}_divisor",
+                f"{code}_buffer_mult",
+                f"{code}_bale_size",
             ],
         )
 
@@ -66,3 +66,13 @@ class ItnCampaignQuantification(BaseQuantification):
         )
 
         return df_long
+
+
+class ItnCampaignQuantification(BaseItnCampaignQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("itn_campaign", spatial_unit, assumptions)
+
+
+class ItnSchoolQuantification(BaseItnCampaignQuantification):
+    def __init__(self, spatial_unit, assumptions={}):
+        super().__init__("itn_school", spatial_unit, assumptions)
